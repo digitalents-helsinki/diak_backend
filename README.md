@@ -12,6 +12,8 @@ docker-compose
 
 run docker-compose up -d
 
+replace the hostname variable in populate-db.sh to your docker network ip
+
 run populate-db.sh script
 
 ## Access postgres
