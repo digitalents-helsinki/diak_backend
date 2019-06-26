@@ -56,7 +56,7 @@ CREATE TABLE "UserGroup" (
 CREATE TABLE "Admin" (
 	"_id" uuid NOT NULL,
 	"_created" timestamp with time zone NOT NULL,
-	"username" NOT NULL UNIQUE,
+	"username" TEXT NOT NULL UNIQUE,
 	"password" TEXT NOT NULL,
 	CONSTRAINT "Admin_pk" PRIMARY KEY ("_id")
 ) WITH (
