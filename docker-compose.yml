@@ -1,0 +1,36 @@
+version: '3.5'
+
+services:
+  postgres:
+    container_name: diak_postgres
+    image: postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: root
+    ports:
+      - "5432:5432"
+    networks:
+      - pg_network
+    volumes:
+      - postgres:/data/postgres
+  
+  pgadmin:
+    container_name: diak_pgadmin
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: user@domain.com
+      PGADMIN_DEFAULT_PASSWORD: root
+    ports:
+      - "80:80"
+    networks:
+      - pg_network
+    volumes:
+      - pgadmin:/root/.pgadmin
+
+networks:
+  pg_network:
+    driver: bridge
+
+volumes:
+  postgres:
+  pgadmin:
