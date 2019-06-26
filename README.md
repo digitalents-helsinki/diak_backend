@@ -1,3 +1,7 @@
+## TODO
+
+move secrets to env file. Right now not needed.
+
 ## Requirements
 
 docker
