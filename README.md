@@ -1,7 +1,3 @@
-## TODO
-
-move secrets to env file. Right now not needed.
-
 ## Requirements
 
 docker
@@ -12,15 +8,11 @@ docker-compose
 
 run docker-compose up -d
 
-replace the hostname variable in populate-db.sh to your docker network ip
-
-run populate-db.sh script
-
 ## Access postgres
 
 localhost:5432
 
-username: postgres
+username: root
 
 password: root
 
