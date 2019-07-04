@@ -1,6 +1,7 @@
+models = require('../models')
+
 module.exports = {
-  getAnonUsers: async function() {
-    const users = await req.context.models.AnonUser.findAll()
-    return res.send(users)
+  getAnonUsers: async function(req, res) {
+    return res.send(models.models.AnonUser.findAll())
   }
 }
