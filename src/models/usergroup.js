@@ -1,4 +1,4 @@
-const userGroup = (sequelize, DataTypes) => {
+module.exports = (sequelize, DataTypes) => {
   const UserGroup = sequelize.define('UserGroup', {
     /*
       Sequelize will create createdAt and updatedAt fields automatically.
@@ -12,6 +12,6 @@ const userGroup = (sequelize, DataTypes) => {
   UserGroup.associate = models => {
     UserGroup.hasOne(models.Admin)
   }
-}
 
-module.exports = userGroup
+  return UserGroup
+}

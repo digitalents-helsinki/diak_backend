@@ -1,4 +1,4 @@
-const surveyResult = (sequelize, DataTypes) => {
+module.exports = (sequelize, DataTypes) => {
   const SurveyResult = sequelize.define('SurveyResult', {
     /*
       Sequelize will create createdAt and updatedAt fields automatically.
@@ -76,6 +76,6 @@ const surveyResult = (sequelize, DataTypes) => {
     SurveyResult.hasOne(models.AnonUser)
     SurveyResult.hasOne(models.UserGroup)
   }
-}
 
-module.exports = surveyResult
+  return SurveyResult
+}

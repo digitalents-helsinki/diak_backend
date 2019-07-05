@@ -1,4 +1,4 @@
-const anonUser = (sequelize, DataTypes) => {
+module.exports = (sequelize, DataTypes) => {
   const AnonUser = sequelize.define('AnonUser', {
     /*
       Sequelize will create createdAt and updatedAt fields automatically.
@@ -15,6 +15,6 @@ const anonUser = (sequelize, DataTypes) => {
   AnonUser.associate = models => {
     AnonUser.hasOne(models.UserGroup)
   }
-}
 
-module.exports = anonUser
+  return AnonUser
+}

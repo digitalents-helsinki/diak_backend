@@ -1,5 +1,5 @@
-const admin = (sequelize, DataTypes) => {
-  const Admin = sequelize.define('Admin', {
+module.exports = (sequelize, DataTypes) => {
+  const Admin = sequelize.define('admin', {
     /*
       Sequelize will create createdAt and updatedAt fields automatically.
     */
@@ -14,6 +14,6 @@ const admin = (sequelize, DataTypes) => {
       type: DataTypes.TEXT
     }
   })
-}
 
-module.exports = admin
+  return Admin
+}

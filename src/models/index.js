@@ -1,6 +1,7 @@
 const Sequelize = require('sequelize')
+let db = {}
 
-sequelize = new Sequelize(
+let sequelize = new Sequelize(
   process.env.DB,
   process.env.DB_USER,
   process.env.DB_PASS,
@@ -9,9 +10,21 @@ sequelize = new Sequelize(
   }
 )
 
-models = {
+let models = {
   Admin: sequelize.import('./admin'),
   UserGroup: sequelize.import('./usergroup'),
   AnonUser: sequelize.import('./anonuser'),
   SurveyResult: sequelize.import('./result')
 }
+
+Object.keys(db).forEach(modelName => {
+  if (db[modelName].associate) {
+    db[modelName].associate(db)
+  }
+})
+
+db.models = models
+db.sequelize = sequelize
+db.Sequelize = Sequelize
+
+module.exports = db
