@@ -4,6 +4,7 @@ const config = require('dotenv')
 config.config()
 const db = require('./models')
 const apiUser = require('./controllers/anonuser')
+const apiResult = require('./controllers/result')
 // const routes = require('./router')
 
 
@@ -14,6 +15,7 @@ app.use(bodyParser.urlencoded({ extended: true}))
 //app.use('/api/', routes)
 
 apiUser(app, db)
+apiResult(app, db)
 
 db.sequelize.sync().then(() => {
   app.listen(process.env.PORT, () => {
