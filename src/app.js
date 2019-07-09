@@ -1,5 +1,6 @@
 const express = require('express')
 const bodyParser = require('body-parser')
+const cors = require('cors')
 const config = require('dotenv')
 config.config()
 const db = require('./models')
@@ -11,7 +12,7 @@ const apiResult = require('./controllers/result')
 const app = express()
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true}))
-
+app.use(cors())
 //app.use('/api/', routes)
 
 apiUser(app, db)

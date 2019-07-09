@@ -4,6 +4,7 @@
   "main": "src/app.js",
   "private": true,
   "dependencies": {
+    "cors": "^2.8.5",
     "dotenv": "^8.0.0",
     "express": "^4.17.1",
     "pg": "^7.11.0",
@@ -12,6 +13,5 @@
   },
   "scripts": {
     "dev": "node src/app.js"
-  },
-  "type": "module"
+  }
 }
