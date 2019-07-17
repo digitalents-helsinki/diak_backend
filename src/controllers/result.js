@@ -8,6 +8,9 @@ module.exports = (app, db) => {
       }
     }).then((result) => res.json(result))
   })
+  app.get('/results', (req, res) => {
+    db.models.SurveyResult.findAll().then((result) => res.json(result))
+  })
   app.post("/result", (req, res) => {
     let id = uuidv4()
     db.models.SurveyResult.create({
