@@ -1,11 +1,13 @@
 const express = require('express')
 const bodyParser = require('body-parser')
 const cors = require('cors')
+const jwt = require('jsonwebtoken')
 const config = require('dotenv')
 config.config()
 const db = require('./models')
 const apiUser = require('./controllers/anonuser')
 const apiResult = require('./controllers/result')
+const apiLogin = require('./controllers/login')
 // const routes = require('./router')
 
 
@@ -17,6 +19,7 @@ app.use(cors())
 
 apiUser(app, db)
 apiResult(app, db)
+apiLogin(app)
 
 db.sequelize.sync().then(() => {
   app.listen(process.env.PORT, () => {
