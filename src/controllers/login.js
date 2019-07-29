@@ -8,7 +8,7 @@ module.exports = (app) => {
     if (user && pass) {
       if (
         user === 'test' &&
-        pass === 'test'
+        pass === 'kAmV33BQ8sgs'
       ) {
         const token = jwt.sign({ user: user}, process.env.JWT_KEY, { expiresIn: '24h'})
         res.json({
