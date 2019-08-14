@@ -8,8 +8,8 @@ const db = require('./models')
 const apiUser = require('./controllers/anonuser')
 const apiResult = require('./controllers/result')
 const apiLogin = require('./controllers/login')
+const apiMail = require('./controllers/mail')
 // const routes = require('./router')
-
 
 const app = express()
 app.use(bodyParser.json())
@@ -20,6 +20,7 @@ app.use(cors())
 apiUser(app, db)
 apiResult(app, db)
 apiLogin(app)
+apiMail(app)
 
 db.sequelize.sync().then(() => {
   app.listen(process.env.PORT, () => {
