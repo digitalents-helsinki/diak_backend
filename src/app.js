@@ -5,7 +5,7 @@ const config = require('dotenv')
 config.config()
 
 const db = require('./models')
-const apiUser = require('./controllers/anonuser')
+const apiUser = require('./controllers/user')
 const apiResult = require('./controllers/result')
 const apiLogin = require('./controllers/login')
 const apiMail = require('./controllers/mail')
