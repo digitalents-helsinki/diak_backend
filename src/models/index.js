@@ -12,8 +12,6 @@ let sequelize = new Sequelize(
 )
 
 let models = {
-  Admin: sequelize.import('./admin'),
-  UserGroup: sequelize.import('./usergroup'),
   User: sequelize.import('./user'),
   SurveyResult: sequelize.import('./result'),
   Survey: sequelize.import('./survey')

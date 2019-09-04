@@ -12,6 +12,9 @@ module.exports = (sequelize, DataTypes) => {
     },
     gender: {
       type: DataTypes.TEXT
+    },
+    roleIsAdmin: {
+      type: DataTypes.BOOLEAN
     }
   })
 

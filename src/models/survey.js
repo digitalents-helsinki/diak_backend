@@ -1,8 +1,14 @@
 module.exports = (sequelize, DataTypes) => {
   const Survey = sequelize.define('Survey', {
-    id: {
+    /*
+      Sequelize will create createdAt and updatedAt fields automatically.
+    */
+    surveyId: {
+      allowNull: false,
+      primaryKey: true,
       type: DataTypes.UUID,
-      primaryKey: true
+      defaultValue: DataTypes.UUIDV4,
+      autoIncrement: false
     },
     name: {
       type: DataTypes.TEXT
@@ -18,6 +24,15 @@ module.exports = (sequelize, DataTypes) => {
     },
     respondents_size: {
       type: DataTypes.INTEGER
+    }
+  },
+  {
+    classMethods: {
+      associate: function(models) {
+        Survey.hasMany(models.SurveyResult, {
+          foreignKey: 'resultId'
+        })
+      }
     }
   })
 

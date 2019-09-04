@@ -11,10 +11,6 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT
     }
   })
-
-  AnonUser.associate = models => {
-    AnonUser.hasOne(models.UserGroup)
-  }
-
+  
   return AnonUser
 }

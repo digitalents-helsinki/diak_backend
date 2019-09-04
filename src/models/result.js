@@ -1,11 +1,15 @@
+'use strict'
+
 module.exports = (sequelize, DataTypes) => {
   const SurveyResult = sequelize.define('SurveyResult', {
     /*
       Sequelize will create createdAt and updatedAt fields automatically.
     */
-    id: {
+    resultId: {
+      allowNull: false,
+      primaryKey: true,
       type: DataTypes.UUID,
-      primaryKey: true
+      defaultValue: DataTypes.UUIDV4
     },
     number_of_returns: {
       type: DataTypes.INTEGER
@@ -70,11 +74,9 @@ module.exports = (sequelize, DataTypes) => {
     life_as_whole_desc: {
       type: DataTypes.TEXT
     }
-  })
-
-  SurveyResult.associate = models => {
-    SurveyResult.hasOne(models.AnonUser)
-    SurveyResult.hasOne(models.UserGroup)
+  }, {})
+  SurveyResult.associate = function(models) {
+    SurveyResult.belongsTo(models.Survey)
   }
 
   return SurveyResult

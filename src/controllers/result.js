@@ -13,9 +13,8 @@ module.exports = (app, db) => {
     db.models.SurveyResult.findAll().then((result) => res.json(result))
   })
   app.post("/result", (req, res) => {
-    let id = uuidv4()
     db.models.SurveyResult.create({
-      id: id,
+      resultId: uuidv4(),
       health: req.body.health,
       overcoming: req.body.overcoming,
       living: req.body.living,
@@ -36,7 +35,8 @@ module.exports = (app, db) => {
       strengths_desc: req.body.strengths_desc,
       self_esteem_desc: req.body.self_esteem_desc,
       life_as_whole_desc: req.body.life_as_whole_desc
+    }).then(() => {
+      res.json({status: 'ok'})
     })
-    res.json({status: 'ok', resultId: id})
   })
 }
