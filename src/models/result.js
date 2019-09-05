@@ -76,7 +76,8 @@ module.exports = (sequelize, DataTypes) => {
     }
   }, {})
   SurveyResult.associate = function(models) {
-    SurveyResult.belongsTo(models.Survey)
+    SurveyResult.hasOne(models.Survey)
+    SurveyResult.hasOne(models.User)
   }
 
   return SurveyResult

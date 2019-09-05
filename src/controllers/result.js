@@ -15,6 +15,8 @@ module.exports = (app, db) => {
   app.post("/result", (req, res) => {
     db.models.SurveyResult.create({
       resultId: uuidv4(),
+      userId: req.body.userId,
+      surveyId: req.body.surveyId,
       health: req.body.health,
       overcoming: req.body.overcoming,
       living: req.body.living,

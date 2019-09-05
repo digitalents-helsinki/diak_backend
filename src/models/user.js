@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const User = sequelize.define('User', {
-    id: {
+    userId: {
       type: DataTypes.UUID,
       primaryKey: true
     },
@@ -15,6 +15,15 @@ module.exports = (sequelize, DataTypes) => {
     },
     roleIsAdmin: {
       type: DataTypes.BOOLEAN
+    }
+  },
+  {
+    classMethods: {
+      associate: function(models) {
+        User.hasMany(models.SurveyResults, {
+          foreignKey: 'resultId'
+        })
+      }
     }
   })
 

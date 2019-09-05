@@ -1,26 +1,26 @@
-'use strict';
+'use strict'
 
 module.exports = {
   up: (queryInterface, Sequelize) => {
     return queryInterface.addColumn(
-      'SurveyResults',
-      'SurveyId',
+      'Users',
+      'ResultId',
       {
         type: Sequelize.UUID,
         references: {
-          model: 'Surveys',
-          key: 'surveyId'
+          model: 'SurveyResults',
+          key: 'resultId'
         },
         onUpdate: 'CASCADE',
-        onDelete: 'SET NULL',
+        onDelete: 'SET NULL'
       }
     )
   },
 
   down: (queryInterface, Sequelize) => {
     return queryInterface.removeColumn(
-      'SurveyResults',
-      'SurveyId'
+      'Users',
+      'resultId'
     )
   }
-};
+}
