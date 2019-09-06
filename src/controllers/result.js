@@ -1,3 +1,5 @@
+'use strict'
+
 const uuidv4 = require('uuid/v4')
 const checkToken = require('../jwt')
 
@@ -15,8 +17,6 @@ module.exports = (app, db) => {
   app.post("/result", (req, res) => {
     db.models.SurveyResult.create({
       resultId: uuidv4(),
-      userId: req.body.userId,
-      surveyId: req.body.surveyId,
       health: req.body.health,
       overcoming: req.body.overcoming,
       living: req.body.living,
@@ -37,8 +37,6 @@ module.exports = (app, db) => {
       strengths_desc: req.body.strengths_desc,
       self_esteem_desc: req.body.self_esteem_desc,
       life_as_whole_desc: req.body.life_as_whole_desc
-    }).then(() => {
-      res.json({status: 'ok'})
-    })
+    }).then(result => res.json(result))
   })
 }

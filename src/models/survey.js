@@ -1,3 +1,5 @@
+'use strict'
+
 module.exports = (sequelize, DataTypes) => {
   const Survey = sequelize.define('Survey', {
     /*
@@ -25,16 +27,13 @@ module.exports = (sequelize, DataTypes) => {
     respondents_size: {
       type: DataTypes.INTEGER
     }
-  },
-  {
-    classMethods: {
-      associate: function(models) {
-        Survey.hasMany(models.SurveyResult, {
-          foreignKey: 'resultId'
-        })
-      }
-    }
-  })
+  }, {})
+
+  Survey.associate = function(models) {
+    Survey.hasMany(models.SurveyResult, {
+      foreignKey: 'resultId'
+    })
+  }
 
   return Survey
 }
