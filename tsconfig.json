@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+      "module": "commonjs",
+      "esModuleInterop": true,
+      "outDir": "./dist",
+      "moduleResolution": "node",
+      "allowJs": true,
+      "target": "es6",
+      "allowSyntheticDefaultImports": true,
+      "emitDecoratorMetadata": true,
+      "experimentalDecorators": true
+  },
+  "include": [
+      "./src/**/*"
+  ]
+}
