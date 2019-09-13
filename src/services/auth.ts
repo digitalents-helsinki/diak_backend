@@ -3,14 +3,11 @@ import { verify, hash } from 'argon2'
 import jwt from 'jsonwebtoken'
 import uuidv4 from 'uuid/v4'
 import { IUser, IUserInputDTO } from '../interfaces/IUser'
-import UserModel from '../entity/user'
+import { User } from '../entity/user'
+import { getRepository } from 'typeorm'
 
 @Service()
 export default class AuthService {
-  constructor(
-    @Inject('userModel') private userModel : UserModel
-  ) {}
-
   generateToken (user) {
     const data = {
       id: user.userId,
@@ -23,12 +20,11 @@ export default class AuthService {
     return jwt.sign({ data }, signature, { expiresIn: expiration })
   }
 
-  public async SignIn (email: string, password: string): Promise<{ user: IUser; token: string }> {
-    const userRecord = await userModel.find({
-      where: {
-        email: email
-      }
-    })
+  public async SignIn (
+    email: string,
+    password: string
+  ): Promise<{ user: User; token: string }> {
+    const userRecord = await getRepository(User).findOne({ email: email })
     if (!userRecord) {
       throw new Error('User not found')
     }
@@ -37,24 +33,26 @@ export default class AuthService {
 
     if (correctPassword) {
       const token = this.generateToken(userRecord)
-      const user = userRecord.toObject()
+      const user = userRecord
+      /*
       Reflect.deleteProperty(user, 'password')
       Reflect.deleteProperty(user, 'salt')
+      */
       return { user, token }
     } else {
       throw new Error('Invalid password')
     }
   }
 
-  public async SignUp (email, password, name) {
+  public async SignUp (email: string, password: string, name: string) {
     const passwordHashed = await hash(password)
-
-    const userRecord = await UserModel.create({
-      userId: uuidv4(),
+    const userRecord = await getRepository(User).create({
       password: passwordHashed,
       email,
       name
     })
+
+    getRepository(User).save(userRecord)
 
     return {
       user: {

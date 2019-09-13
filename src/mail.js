@@ -19,17 +19,20 @@ transporter.set('oauth2_provision_cb', (user, renew, callback)=> {
   }
 })
 */
-module.exports = function(to, subject, html) {
-  transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to: to,
-    subject: subject,
-    html: html,
-  }, function (err, info) {
-    if(err) {
-      console.log(err)
-    } else {
-      console.log(info)
+module.exports = function (to, subject, html) {
+  transporter.sendMail(
+    {
+      from: process.env.EMAIL_USER,
+      to: to,
+      subject: subject,
+      html: html
+    },
+    function (err, info) {
+      if (err) {
+        console.log(err)
+      } else {
+        console.log(info)
+      }
     }
-  })
+  )
 }

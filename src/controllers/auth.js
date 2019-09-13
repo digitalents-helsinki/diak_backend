@@ -5,7 +5,7 @@ import { celebrate, Joi } from 'celebrate'
 
 const route = Router()
 
-export default (app) => {
+export default app => {
   app.use('/auth', route)
 
   route.post(
@@ -20,7 +20,11 @@ export default (app) => {
     async (req, res, next) => {
       try {
         const authServiceInstance = Container.get(AuthService)
-        const { user, token } = await authServiceInstance.SignUp(req.body.email, req.body.password, req.body.name)
+        const { user, token } = await authServiceInstance.SignUp(
+          req.body.email,
+          req.body.password,
+          req.body.name
+        )
         return res.status(201).json({ user, token })
       } catch (e) {
         throw new Error(e)
@@ -40,10 +44,14 @@ export default (app) => {
       try {
         const { email, password } = req.body
         const authServiceInstance = Container.get(AuthService)
-        const { user, token } = await authServiceInstance.SignIn(email, password)
+        const { user, token } = await authServiceInstance.SignIn(
+          email,
+          password
+        )
         return res.json({ user, token }).status(200)
       } catch (e) {
         throw new Error(e)
       }
-    })
+    }
+  )
 }

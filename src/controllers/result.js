@@ -9,12 +9,12 @@ module.exports = (app, db) => {
       where: {
         id: req.params.id
       }
-    }).then((result) => res.json(result))
+    }).then(result => res.json(result))
   })
   app.get('/results', checkToken, (req, res) => {
-    db.models.SurveyResult.findAll().then((result) => res.json(result))
+    db.models.SurveyResult.findAll().then(result => res.json(result))
   })
-  app.post("/result", (req, res) => {
+  app.post('/result', (req, res) => {
     db.models.SurveyResult.create({
       resultId: uuidv4(),
       health: req.body.health,

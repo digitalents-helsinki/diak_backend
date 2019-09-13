@@ -10,30 +10,28 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 const typeorm_1 = require("typeorm");
-let User = class User {
+const class_validator_1 = require("class-validator");
+let Survey = class Survey {
 };
 __decorate([
     typeorm_1.PrimaryGeneratedColumn(),
     __metadata("design:type", Number)
-], User.prototype, "userId", void 0);
+], Survey.prototype, "surveyId", void 0);
 __decorate([
     typeorm_1.Column(),
     __metadata("design:type", String)
-], User.prototype, "email", void 0);
+], Survey.prototype, "name", void 0);
 __decorate([
     typeorm_1.Column(),
-    __metadata("design:type", String)
-], User.prototype, "name", void 0);
+    class_validator_1.IsDate(),
+    __metadata("design:type", Date)
+], Survey.prototype, "startDate", void 0);
 __decorate([
     typeorm_1.Column(),
-    __metadata("design:type", String)
-], User.prototype, "password", void 0);
-__decorate([
-    typeorm_1.Column(),
-    __metadata("design:type", String)
-], User.prototype, "salt", void 0);
-User = __decorate([
+    class_validator_1.IsDate(),
+    __metadata("design:type", Date)
+], Survey.prototype, "endDate", void 0);
+Survey = __decorate([
     typeorm_1.Entity()
-], User);
-exports.User = User;
-exports.default = User;
+], Survey);
+exports.Survey = Survey;

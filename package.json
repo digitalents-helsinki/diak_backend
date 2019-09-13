@@ -16,9 +16,12 @@
     "esm": "^3.2.25",
     "express": "^4.17.1",
     "express-session": "^1.16.2",
+    "husky": "^3.0.5",
     "jsonwebtoken": "^8.5.1",
+    "lint-staged": "^9.2.5",
     "nodemailer": "^6.3.0",
     "pg": "^7.11.0",
+    "prettier-standard": "^14.0.5",
     "reflect-metadata": "^0.1.13",
     "sequelize": "^5.9.2",
     "typedi": "^0.8.0",
@@ -29,7 +32,8 @@
     "build-ts": "tsc",
     "watch-ts": "tsc -w",
     "start": "node dist/app.js",
-    "dev": "node -r dotenv/config dist/app.js"
+    "dev": "node -r dotenv/config dist/app.js",
+    "format": "prettier-standard 'src/**/*.js' 'src/**/*.ts'"
   },
   "devDependencies": {
     "eslint": "^6.3.0",

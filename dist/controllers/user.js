@@ -1,4 +1,4 @@
-'use strict';
+"use strict";
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -8,34 +8,19 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
         step((generator = generator.apply(thisArg, _arguments || [])).next());
     });
 };
-const uuidv4 = require('uuid/v4');
-const { UserService } = require('../services/user').default;
-module.exports = (app, db) => {
-    app.post("/user/create", (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
-        /*
-        db.models.User.create({
-          userId: uuidv4(),
-          email: req.body.email,
-          name: req.body.name,
-          gender: req.body.gender
-        })
-        */
+Object.defineProperty(exports, "__esModule", { value: true });
+const auth_1 = require("../services/auth");
+exports.default = (app, db) => {
+    app.post('/user/create', (req, res, next) => __awaiter(void 0, void 0, void 0, function* () {
         const userDTO = req.body;
-        const { user } = yield UserService.SignUp(userDTO);
+        const { user } = yield auth_1.AuthService.SignUp(userDTO);
         return res.json({ user });
     }));
-    app.get("/user/:id", (req, res) => {
-        db.models.User.findAll({
+    app.get('/user/:id', (req, res) => {
+        db.models.User.findOne({
             where: {
-                userId: req.params.id
+                email: req.params.email
             }
-        }).then((result) => res.json(result));
-    });
-    app.get("/user/:id/results", (req, res) => {
-        db.models.User.findAll({
-            where: {
-                userId: req.params.id
-            }
-        }).then(result => res.json(result.getSurveyResults));
+        }).then(result => res.json(result));
     });
 };

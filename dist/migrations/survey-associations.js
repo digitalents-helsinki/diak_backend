@@ -18,7 +18,7 @@ module.exports = {
                     key: 'surveyId'
                 },
                 onUpdate: 'CASCADE',
-                onDelete: 'SET NULL',
+                onDelete: 'SET NULL'
             });
             yield queryInterface.addColumn('SurveyResults', 'userId', {
                 type: Sequelize.UUID,

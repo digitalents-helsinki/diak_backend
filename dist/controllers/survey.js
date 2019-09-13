@@ -13,7 +13,7 @@ module.exports = (app, db) => {
         res.json({ status: 'ok' });
     });
     app.get('/survey/all', (req, res) => {
-        db.models.Survey.findAll().then((result) => res.json(result));
+        db.models.Survey.findAll().then(result => res.json(result));
     });
     app.post('/survey/delete', (req, res) => {
         db.models.Survey.destroy({

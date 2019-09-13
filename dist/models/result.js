@@ -2,8 +2,8 @@
 module.exports = (sequelize, DataTypes) => {
     const SurveyResult = sequelize.define('SurveyResult', {
         /*
-          Sequelize will create createdAt and updatedAt fields automatically.
-        */
+        Sequelize will create createdAt and updatedAt fields automatically.
+      */
         resultId: {
             allowNull: false,
             primaryKey: true,

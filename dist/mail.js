@@ -23,7 +23,7 @@ module.exports = function (to, subject, html) {
         from: process.env.EMAIL_USER,
         to: to,
         subject: subject,
-        html: html,
+        html: html
     }, function (err, info) {
         if (err) {
             console.log(err);

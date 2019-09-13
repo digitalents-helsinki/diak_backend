@@ -1,4 +1,4 @@
-import {createConnection} from "typeorm"
+import { createConnection } from 'typeorm'
 
 createConnection({
   type: 'postgres',
@@ -6,9 +6,10 @@ createConnection({
   username: process.env.DB_USER,
   password: process.env.DB_PASS,
   database: process.env.DB
-}).then(conn => {
-  console.log("conn established")
 })
-.catch(err => {
-  console.log("err", err)
-})
+  .then(conn => {
+    console.log('conn established')
+  })
+  .catch(err => {
+    console.log('err', err)
+  })

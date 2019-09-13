@@ -17,7 +17,7 @@ const typedi_1 = require("typedi");
 const auth_1 = __importDefault(require("../services/auth"));
 const celebrate_1 = require("celebrate");
 const route = express_1.Router();
-exports.default = (app) => {
+exports.default = app => {
     app.use('/auth', route);
     route.post('/signup', celebrate_1.celebrate({
         body: celebrate_1.Joi.object({

@@ -1,21 +1,19 @@
 import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm'
+import { IsDate } from 'class-validator'
 
 @Entity()
-export class User {
+export class Survey {
   @PrimaryGeneratedColumn()
-  userId: number
-
-  @Column()
-  email: string
+  surveyId: number
 
   @Column()
   name: string
 
   @Column()
-  password: string
+  @IsDate()
+  startDate: Date
 
   @Column()
-  salt: string
+  @IsDate()
+  endDate: Date
 }
-
-export default User
