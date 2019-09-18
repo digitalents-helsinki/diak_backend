@@ -6,7 +6,8 @@ let sequelize = new Sequelize(
   process.env.DB_USER,
   process.env.DB_PASS,
   {
-    dialect: 'postgres'
+    dialect: 'postgres',
+    logging: false
   }
 )
 
@@ -14,7 +15,8 @@ let models = {
   Admin: sequelize.import('./admin'),
   UserGroup: sequelize.import('./usergroup'),
   AnonUser: sequelize.import('./anonuser'),
-  SurveyResult: sequelize.import('./result')
+  SurveyResult: sequelize.import('./result'),
+  Survey: sequelize.import('./survey')
 }
 
 Object.keys(db).forEach(modelName => {
