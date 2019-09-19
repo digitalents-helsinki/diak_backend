@@ -3,7 +3,7 @@ module.exports = (sequelize, DataTypes) => {
     /*
       Sequelize will create createdAt and updatedAt fields automatically.
     */
-    id: {
+    userId: {
       type: DataTypes.UUID,
       primaryKey: true
     },
@@ -14,6 +14,7 @@ module.exports = (sequelize, DataTypes) => {
 
   AnonUser.associate = models => {
     AnonUser.hasOne(models.UserGroup)
+    AnonUser.hasMany(models.Survey)
   }
 
   return AnonUser
