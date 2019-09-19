@@ -22,9 +22,7 @@ apiLogin(app)
 apiMail(app)
 apiSurvey(app, db)
 
-db.sequelize.sync({
-  force: true
-}).then(() => {
+db.sequelize.sync().then(() => {
   app.listen(process.env.PORT, () => {
     console.log(`app listening on port ${process.env.PORT}`)
   })

@@ -19,7 +19,7 @@ module.exports = (app, db) => {
   app.post('/survey/delete', (req, res) => {
     db.models.Survey.destroy({
       where: {
-        id: req.body.surveyId
+        surveyId: req.body.id
       }
     })
     res.json({status: 'ok'})
