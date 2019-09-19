@@ -8,13 +8,12 @@ module.exports = (app, db) => {
       anon: req.body.anon,
       startDate: req.body.startDate,
       endDate: req.body.endDate,
-      respondents_size: req.body.respondents_size,
-      respondents: req.body.respondents
+      respondents_size: req.body.respondents_size
     })
-    res.json({ status: 'ok' })
+    res.json({status: 'ok'})
   })
   app.get('/survey/all', (req, res) => {
-    db.models.Survey.findAll().then(result => res.json(result))
+    db.models.Survey.findAll().then((result) => res.json(result))
   })
   app.post('/survey/delete', (req, res) => {
     db.models.Survey.destroy({

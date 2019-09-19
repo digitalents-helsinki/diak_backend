@@ -4,7 +4,7 @@ const jwt = require('jsonwebtoken')
   FOR TESTING ONLY
 */
 
-module.exports = app => {
+module.exports = (app) => {
   app.post('/login', (req, res) => {
     const user = req.body.user
     const pass = req.body.pass

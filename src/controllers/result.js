@@ -1,4 +1,5 @@
 const uuidv4 = require('uuid/v4')
+const checkToken = require('../jwt')
 
 module.exports = (app, db) => {
   app.get('/result/:id', (req, res) => {
@@ -7,6 +8,9 @@ module.exports = (app, db) => {
         id: req.params.id
       }
     }).then((result) => res.json(result))
+  })
+  app.get('/results', checkToken, (req, res) => {
+    db.models.SurveyResult.findAll().then((result) => res.json(result))
   })
   app.post("/result", (req, res) => {
     let id = uuidv4()
