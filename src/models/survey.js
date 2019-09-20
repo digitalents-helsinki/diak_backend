@@ -1,6 +1,6 @@
 module.exports = (sequelize, DataTypes) => {
   const Survey = sequelize.define('Survey', {
-    id: {
+    surveyId: {
       type: DataTypes.UUID,
       primaryKey: true
     },
