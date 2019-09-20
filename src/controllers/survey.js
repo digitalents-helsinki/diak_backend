@@ -9,7 +9,8 @@ module.exports = (app, db) => {
       anon: req.body.anon,
       startDate: req.body.startDate,
       endDate: req.body.endDate,
-      respondents_size: req.body.respondents_size
+      respondents_size: req.body.respondents_size,
+      archived: false
     })
     res.json({status: 'ok'})
   })
@@ -23,5 +24,14 @@ module.exports = (app, db) => {
       }
     })
     res.json({status: 'ok'})
+  })
+  app.post('/survey/archive', (req, res) => {
+    db.models.Survey.update({
+        archived: true
+      }, {
+      where: {
+        surveyId: req.body.id
+      }
+    })
   })
 }

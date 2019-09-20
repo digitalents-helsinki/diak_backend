@@ -18,6 +18,9 @@ module.exports = (sequelize, DataTypes) => {
     },
     respondents_size: {
       type: DataTypes.INTEGER
+    },
+    archived: {
+      type: DataTypes.BOOLEAN
     }
   })
 
