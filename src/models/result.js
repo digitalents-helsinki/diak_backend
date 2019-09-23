@@ -71,11 +71,6 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT
     }
   })
-
-  SurveyResult.associate = models => {
-    SurveyResult.hasOne(models.AnonUser)
-    SurveyResult.hasOne(models.UserGroup)
-  }
-
+  
   return SurveyResult
 }

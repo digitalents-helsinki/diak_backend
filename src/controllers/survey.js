@@ -3,19 +3,27 @@ const Mailer = require('./mail')
 
 module.exports = (app, db) => {
   app.post('/survey/create', (req, res) => {
-    db.models.Survey.create({
+    db.Survey.create({
       surveyId: uuidv4(),
       name: req.body.id,
       anon: req.body.anon,
       startDate: req.body.startDate,
       endDate: req.body.endDate,
       respondents_size: req.body.respondents_size,
-      archived: false
+      archived: false,
+      active: false
     })
     res.json({status: 'ok'})
   })
   app.get('/survey/all', (req, res) => {
     db.models.Survey.findAll().then((result) => res.json(result))
+  })
+  app.get('/survey/all/:id', (req, res) => {
+    db.models.Survey.findAll({
+      where: {
+        adminId: req.params.id
+      }
+    }).then((result) => res.json(result))
   })
   app.post('/survey/delete', (req, res) => {
     db.models.Survey.destroy({

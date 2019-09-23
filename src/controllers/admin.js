@@ -8,9 +8,9 @@ module.exports = (app, db) => {
       }
     }).then((result) => res.json(result))
   })
-  app.post("/admin/", (req, res) => {
-    db.models.Admin.create({
-      id: uuidv4()
+  app.post("/admin/create", (req, res) => {
+    db.Admin.create({
+      adminId: uuidv4()
     })
     res.json({status: 'ok'})
   })

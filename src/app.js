@@ -10,20 +10,22 @@ const apiResult = require('./controllers/result')
 const apiLogin = require('./controllers/login')
 const apiMail = require('./controllers/mail')
 const apiSurvey = require('./controllers/survey')
+const apiAdmin = require('./controllers/admin')
 
 const app = express()
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true}))
 app.use(cors())
 
-apiUser(app, db)
-apiResult(app, db)
-apiLogin(app)
-apiMail(app)
-apiSurvey(app, db)
-
 db.sequelize.sync().then(() => {
   app.listen(process.env.PORT, () => {
     console.log(`app listening on port ${process.env.PORT}`)
   })
 })
+
+apiUser(app, db)
+apiResult(app, db)
+apiLogin(app)
+apiMail(app)
+apiSurvey(app, db)
+apiAdmin(app, db)

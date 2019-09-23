@@ -1,9 +1,9 @@
 module.exports = (sequelize, DataTypes) => {
-  const Admin = sequelize.define('admin', {
+  const Admin = sequelize.define('Admin', {
     /*
       Sequelize will create createdAt and updatedAt fields automatically.
     */
-    id: {
+    adminId: {
       type: DataTypes.UUID,
       primaryKey: true
     },
@@ -14,6 +14,12 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT
     }
   })
+
+  Admin.associate = models => {
+    Admin.hasMany(models.Survey, {
+      foreignKey: 'surveyId'
+    })
+  }
 
   return Admin
 }

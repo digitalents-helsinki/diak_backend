@@ -9,9 +9,5 @@ module.exports = (sequelize, DataTypes) => {
     }
   })
 
-  UserGroup.associate = models => {
-    UserGroup.hasOne(models.Admin)
-  }
-
   return UserGroup
 }
