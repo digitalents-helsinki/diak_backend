@@ -17,7 +17,8 @@ module.exports = (sequelize, DataTypes) => {
 
   Admin.associate = models => {
     Admin.hasMany(models.Survey, {
-      foreignKey: 'surveyId'
+      foreignKey: 'surveyId',
+      constraints: false
     })
   }
 

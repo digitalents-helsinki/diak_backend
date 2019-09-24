@@ -3,6 +3,11 @@ const Mailer = require('./mail')
 
 module.exports = (app, db) => {
   app.post('/survey/create', (req, res) => {
+    let admin = db.Admin.findOne({
+      where: {
+        adminId: req.body.adminId
+      }
+    })
     db.Survey.create({
       surveyId: uuidv4(),
       name: req.body.id,
@@ -11,7 +16,8 @@ module.exports = (app, db) => {
       endDate: req.body.endDate,
       respondents_size: req.body.respondents_size,
       archived: false,
-      active: false
+      active: false,
+      adminId: req.body.adminId
     })
     res.json({status: 'ok'})
   })
