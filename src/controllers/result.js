@@ -5,7 +5,7 @@ module.exports = (app, db) => {
   app.get('/result/:id', (req, res) => {
     db.models.SurveyResult.findAll({
       where: {
-        id: req.params.id
+        resultId: req.params.id
       }
     }).then((result) => res.json(result))
   })
@@ -15,7 +15,7 @@ module.exports = (app, db) => {
   app.post("/result", (req, res) => {
     let id = uuidv4()
     db.models.SurveyResult.create({
-      id: id,
+      resultId: id,
       health: req.body.health,
       overcoming: req.body.overcoming,
       living: req.body.living,

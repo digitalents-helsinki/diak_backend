@@ -21,5 +21,12 @@ module.exports = (sequelize, DataTypes) => {
     }
   })
 
+  User.associate = models => {
+    User.hasMany(models.SurveyResult, {
+      foreignKey: 'resultId',
+      constraints: false
+    })
+  }
+
   return User
 }

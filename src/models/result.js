@@ -3,7 +3,7 @@ module.exports = (sequelize, DataTypes) => {
     /*
       Sequelize will create createdAt and updatedAt fields automatically.
     */
-    id: {
+    resultId: {
       type: DataTypes.UUID,
       primaryKey: true
     },
@@ -71,6 +71,13 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT
     }
   })
+
+  SurveyResult.associate = models => {
+    SurveyResult.belongsTo(models.User, {
+      foreignKey: 'userId',
+      constraints: false
+    })
+  }
   
   return SurveyResult
 }
