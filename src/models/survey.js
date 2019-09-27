@@ -34,6 +34,9 @@ module.exports = (sequelize, DataTypes) => {
     Survey.belongsTo(models.Admin, {
       foreignKey: 'adminId'
     })
+    Survey.hasMany(models.User, {
+      foreignKey: 'userId'
+    }) 
   }
 
   return Survey

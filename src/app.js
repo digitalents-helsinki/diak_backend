@@ -19,10 +19,12 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true}))
 app.use(cors())
 
-db.sequelize.sync({ force: true }).then(() => {
+db.sequelize.sync({ force: true })
+.then(() => {
   app.listen(process.env.PORT, () => {
     console.log(`app listening on port ${process.env.PORT}`)
   })
+  return true
 })
 
 apiUser(app, db)

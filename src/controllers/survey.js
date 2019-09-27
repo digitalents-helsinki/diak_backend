@@ -1,8 +1,10 @@
+// const express = require('express')
 const uuidv4 = require('uuid/v4')
-const Mailer = require('./mail')
+const sendMail = require('../mail')
+// const router = express.Router()
 
 module.exports = (app, db) => {
-  app.post('/survey/create', (req, res) => {
+  app.post('/survey/create', (req, res, next) => {
     db.Survey.create({
       surveyId: uuidv4(),
       name: req.body.id,
@@ -14,20 +16,29 @@ module.exports = (app, db) => {
       active: false,
       adminId: req.body.adminId
     })
-    res.json({status: 'ok'})
+    req.body.to.map(to => {
+      if (req.body.anon === true) {
+        sendMail(to, 'Uusi kysely', 
+        'Täytä anonyymi kysely http://localhost:8080/questionnaire/' + req.body.id)
+      } else {
+        sendMail(to, 'Uusi kysely',
+        'Täytä kysely http://localhost:8080/login/')
+      }
+    })
+    res.json({ success: true })
   })
   app.get('/survey/all', (req, res) => {
-    db.models.Survey.findAll().then((result) => res.json(result))
+    db.Survey.findAll().then((result) => res.json(result))
   })
   app.get('/survey/all/:id', (req, res) => {
-    db.models.Survey.findAll({
+    db.Survey.findAll({
       where: {
         adminId: req.params.id
       }
     }).then((result) => res.json(result))
   })
   app.post('/survey/delete', (req, res) => {
-    db.models.Survey.destroy({
+    db.Survey.destroy({
       where: {
         surveyId: req.body.id
       }
@@ -35,7 +46,7 @@ module.exports = (app, db) => {
     res.json({status: 'ok'})
   })
   app.post('/survey/archive', (req, res) => {
-    db.models.Survey.update({
+    db.Survey.update({
         archived: true
       }, {
       where: {
@@ -44,6 +55,6 @@ module.exports = (app, db) => {
     })
   })
   app.get('/surveys/:userId', (req, res) => {
-    db.User
+    // TODO
   })
 }
