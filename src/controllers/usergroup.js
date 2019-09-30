@@ -13,7 +13,8 @@ module.exports = (app, db) => {
   app.post("/usergroup/", (req, res) => {
     db.models.UserGroup.create({
       id: uuidv4()
-    })
+    }).then(group => group.setAnonUsers(req.body.users))
+    .catch(err => console.log(err))
     res.json({status: 'ok'})
   })
 }

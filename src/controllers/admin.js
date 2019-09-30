@@ -2,7 +2,7 @@ const uuidv4 = require('uuid/v4')
 
 module.exports = (app, db) => {
   app.get('/admin/:id', (req, res) => {
-    db.models.Admin.findAll({
+    db.Admin.findAll({
       where: {
         id: req.params.id
       }

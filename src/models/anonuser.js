@@ -14,6 +14,7 @@ module.exports = (sequelize, DataTypes) => {
 
   AnonUser.associate = models => {
     AnonUser.belongsTo(models.UserGroup)
+    AnonUser.hasOne(models.SurveyResult)
   }
 
   return AnonUser

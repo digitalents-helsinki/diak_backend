@@ -26,6 +26,7 @@ db.sequelize.sync({ force: true })
   return true
 })
 
+apiAnonUser(app, db)
 apiUser(app, db)
 apiResult(app, db)
 apiLogin(app)

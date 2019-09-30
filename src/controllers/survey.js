@@ -16,11 +16,28 @@ module.exports = (app, db) => {
       archived: false,
       active: false
     })
-    .then(survey => {
+    .then(async survey => {
       // survey.setAdmin(req.body.adminId)
       if (req.body.anon == true) {
-        db.UserGroup.create({
+        let group = await db.UserGroup.create({
           id: uuidv4()
+        })
+        req.body.to.map(async to => {
+          if (req.body.anon === true) {
+            const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
+            let anonuser = await db.AnonUser.create({
+              id: uuidv4(),
+              entry_hash: hash
+            })
+            group.addAnonUser(anonuser)
+            sendMail(to, 'Uusi kysely', 
+            'Täytä anonyymi kysely http://localhost:8080/questionnaire/' + req.body.id + '/' + hash)
+          } else {
+            /*
+            sendMail(to, 'Uusi kysely',
+            'Täytä kysely http://localhost:8080/login/')
+            */
+          }
         })
       } else {
         // survey.setUsers(req.body.to)
@@ -28,23 +45,6 @@ module.exports = (app, db) => {
       return true
     })
     .catch(err => console.log(err))
-
-    req.body.to.map(to => {
-      if (req.body.anon === true) {
-        const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
-        db.AnonUser.create({
-          id: uuidv4(),
-          entry_hash: hash
-        })
-        sendMail(to, 'Uusi kysely', 
-        'Täytä anonyymi kysely http://localhost:8080/questionnaire/' + req.body.id + '/' + hash)
-      } else {
-        /*
-        sendMail(to, 'Uusi kysely',
-        'Täytä kysely http://localhost:8080/login/')
-        */
-      }
-    })
     res.json({ success: true })
   })
   app.get('/survey/all', (req, res) => {

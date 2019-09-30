@@ -13,8 +13,9 @@ module.exports = (app, db) => {
     db.SurveyResult.findAll().then((result) => res.json(result))
   })
   app.post("/result", (req, res) => {
+    const id = uuidv4()
     db.SurveyResult.create({
-      resultId: uuidv4(),
+      resultId: id,
       health: req.body.health,
       overcoming: req.body.overcoming,
       living: req.body.living,
@@ -35,7 +36,15 @@ module.exports = (app, db) => {
       strengths_desc: req.body.strengths_desc,
       self_esteem_desc: req.body.self_esteem_desc,
       life_as_whole_desc: req.body.life_as_whole_desc
-    })
+    }).then(async result => {
+      let anonuser = await db.AnonUser.findOne({
+        where: {
+          entry_hash: req.body.anonId
+        }
+      })
+      result.setAnonUser(anonuser)
+      return true
+    }).catch(err => console.log(err))
     res.json({status: 'ok', resultId: id})
   })
 }
