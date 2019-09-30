@@ -1,6 +1,7 @@
 // const express = require('express')
 const uuidv4 = require('uuid/v4')
 const sendMail = require('../mail')
+const crypto = require('crypto')
 // const router = express.Router()
 
 module.exports = (app, db) => {
@@ -13,16 +14,35 @@ module.exports = (app, db) => {
       endDate: req.body.endDate,
       respondents_size: req.body.respondents_size,
       archived: false,
-      active: false,
-      adminId: req.body.adminId
+      active: false
     })
+    .then(survey => {
+      // survey.setAdmin(req.body.adminId)
+      if (req.body.anon == true) {
+        db.UserGroup.create({
+          id: uuidv4()
+        })
+      } else {
+        // survey.setUsers(req.body.to)
+      }
+      return true
+    })
+    .catch(err => console.log(err))
+
     req.body.to.map(to => {
       if (req.body.anon === true) {
+        const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
+        db.AnonUser.create({
+          id: uuidv4(),
+          entry_hash: hash
+        })
         sendMail(to, 'Uusi kysely', 
-        'Täytä anonyymi kysely http://localhost:8080/questionnaire/' + req.body.id)
+        'Täytä anonyymi kysely http://localhost:8080/questionnaire/' + req.body.id + '/' + hash)
       } else {
+        /*
         sendMail(to, 'Uusi kysely',
         'Täytä kysely http://localhost:8080/login/')
+        */
       }
     })
     res.json({ success: true })
@@ -33,14 +53,14 @@ module.exports = (app, db) => {
   app.get('/survey/all/:id', (req, res) => {
     db.Survey.findAll({
       where: {
-        adminId: req.params.id
+        surveyId: req.params.id
       }
     }).then((result) => res.json(result))
   })
   app.post('/survey/delete', (req, res) => {
     db.Survey.destroy({
       where: {
-        surveyId: req.body.id
+        id: req.body.id
       }
     })
     res.json({status: 'ok'})
@@ -56,5 +76,8 @@ module.exports = (app, db) => {
   })
   app.get('/surveys/:userId', (req, res) => {
     // TODO
+    db.Survey.findAll({
+      
+    })
   })
 }

@@ -73,10 +73,8 @@ module.exports = (sequelize, DataTypes) => {
   })
 
   SurveyResult.associate = models => {
-    SurveyResult.belongsTo(models.User, {
-      foreignKey: 'userId',
-      constraints: false
-    })
+    SurveyResult.belongsTo(models.User)
+    SurveyResult.belongsTo(models.AnonUser)
   }
   
   return SurveyResult

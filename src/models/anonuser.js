@@ -13,7 +13,7 @@ module.exports = (sequelize, DataTypes) => {
   })
 
   AnonUser.associate = models => {
-    AnonUser.hasOne(models.UserGroup)
+    AnonUser.belongsTo(models.UserGroup)
   }
 
   return AnonUser

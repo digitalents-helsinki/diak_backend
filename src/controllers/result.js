@@ -3,19 +3,18 @@ const checkToken = require('../jwt')
 
 module.exports = (app, db) => {
   app.get('/result/:id', (req, res) => {
-    db.models.SurveyResult.findAll({
+    db.SurveyResult.findAll({
       where: {
         resultId: req.params.id
       }
     }).then((result) => res.json(result))
   })
-  app.get('/results', checkToken, (req, res) => {
-    db.models.SurveyResult.findAll().then((result) => res.json(result))
+  app.get('/results', (req, res) => {
+    db.SurveyResult.findAll().then((result) => res.json(result))
   })
   app.post("/result", (req, res) => {
-    let id = uuidv4()
-    db.models.SurveyResult.create({
-      resultId: id,
+    db.SurveyResult.create({
+      resultId: uuidv4(),
       health: req.body.health,
       overcoming: req.body.overcoming,
       living: req.body.living,

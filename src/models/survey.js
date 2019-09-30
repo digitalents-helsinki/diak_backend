@@ -31,12 +31,9 @@ module.exports = (sequelize, DataTypes) => {
   })
 
   Survey.associate = models => {
-    Survey.belongsTo(models.Admin, {
-      foreignKey: 'adminId'
-    })
-    Survey.hasMany(models.User, {
-      foreignKey: 'userId'
-    }) 
+    Survey.belongsTo(models.Admin)
+    Survey.hasMany(models.User)
+    Survey.hasOne(models.UserGroup)
   }
 
   return Survey

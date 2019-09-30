@@ -9,5 +9,9 @@ module.exports = (sequelize, DataTypes) => {
     }
   })
 
+  UserGroup.associate = models => {
+    UserGroup.hasMany(models.AnonUser)
+  }
+
   return UserGroup
 }
