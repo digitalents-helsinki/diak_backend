@@ -4,7 +4,7 @@ const path = require('path')
 
 const basename = path.basename(__filename)
 let db = {}
-let sequelize = Object
+let sequelize = new Object
 
 if (process.env.NODE_ENV === 'development') {
   sequelize = new Sequelize(
@@ -18,9 +18,6 @@ if (process.env.NODE_ENV === 'development') {
 } else if (process.env.NODE_ENV === 'production') {
   sequelize = new Sequelize(
     process.env.DATABASE_URL,
-    {
-      dialect: 'postgres'
-    },
     {
       dialectOptions: {
         ssl: true
