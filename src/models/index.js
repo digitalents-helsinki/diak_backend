@@ -4,22 +4,32 @@ const path = require('path')
 
 const basename = path.basename(__filename)
 let db = {}
+let sequelize = Object
 
-let sequelize = new Sequelize(
-  process.env.DB,
-  process.env.DB_USER,
-  process.env.DB_PASS,
-  {
-    host: process.env.DATABASE_URL,
-    port: process.env.DATABASE_PORT,
-    dialect: 'postgres'
-  },
-  {
-    dialectOptions: {
-      ssl: true
+if (process.env.NODE_ENV === 'development') {
+  sequelize = new Sequelize(
+    process.env.DB,
+    process.env.DB_USER,
+    process.env.DB_PASS,
+    {
+      dialect: 'postgres'
     }
-  }
-)
+  )
+} else if (process.env.NODE_ENV === 'production') {
+  sequelize = new Sequelize(
+    process.env.DATABASE_URL,
+    {
+      dialect: 'postgres'
+    },
+    {
+      dialectOptions: {
+        ssl: true
+      }
+    }
+  )
+} else {
+  console.log('NODE_ENV has not been set')
+}
 
 fs
   .readdirSync(__dirname)
