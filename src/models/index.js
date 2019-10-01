@@ -10,7 +10,14 @@ let sequelize = new Sequelize(
   process.env.DB_USER,
   process.env.DB_PASS,
   {
+    host: process.env.DATABASE_URL,
+    port: process.env.DATABASE_PORT,
     dialect: 'postgres'
+  },
+  {
+    dialectOptions: {
+      ssl: true
+    }
   }
 )
 
