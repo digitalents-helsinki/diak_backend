@@ -3,48 +3,63 @@ const checkToken = require('../jwt')
 
 module.exports = (app, db) => {
   app.get('/result/:id', (req, res) => {
-    db.SurveyResult.findAll({
+    db.AnonUser.findOne({
       where: {
-        resultId: req.params.id
+        entry_hash: req.body.anonId
+      },
+      attributes: ['id']
+    }).then(async anonUser => {
+      if (anonUser) {
+        return res.json(
+          await db.Survey.findByPk(req.params.id, {
+            include: [{
+              model: db.Question,
+              required: true,
+              include: [{
+                model: db.Answer,
+                where: {
+                  AnonUserId: anonUser.id
+                }
+              }]
+            }]
+          })
+        )
+      } else {
+        return res.send("Error")
       }
-    }).then((result) => res.json(result))
+    }).catch(err => console.log(err))
   })
-  app.get('/results', (req, res) => {
-    db.SurveyResult.findAll().then((result) => res.json(result))
+  app.get('/results/:id', (req, res) => {
+    db.Survey.findByPk(req.params.id, {
+      include: [{
+        model: db.Question,
+        include: [db.Answer]
+      }]
+    }).then((result) => res.json(result)).catch(err => console.log(err))
   })
   app.post("/result", (req, res) => {
-    const id = uuidv4()
-    db.SurveyResult.create({
-      resultId: id,
-      health: req.body.health,
-      overcoming: req.body.overcoming,
-      living: req.body.living,
-      coping: req.body.coping,
-      family: req.body.family,
-      friends: req.body.friends,
-      finance: req.body.finance,
-      strengths: req.body.strengths,
-      self_esteem: req.body.self_esteem,
-      life_as_whole: req.body.life_as_whole,
-      health_desc: req.body.health_desc,
-      overcoming_desc: req.body.overcoming_desc,
-      living_desc: req.body.living_desc,
-      coping_desc: req.body.coping_desc,
-      family_desc: req.body.family_desc,
-      friends_desc: req.body.friends_desc,
-      finance_desc: req.body.finance_desc,
-      strengths_desc: req.body.strengths_desc,
-      self_esteem_desc: req.body.self_esteem_desc,
-      life_as_whole_desc: req.body.life_as_whole_desc
-    }).then(async result => {
+    db.Question.findAll({
+      where: {
+        SurveySurveyId: req.body.surveyId
+      }
+    }).then(async questions => {
       let anonuser = await db.AnonUser.findOne({
         where: {
           entry_hash: req.body.anonId
         }
       })
-      result.setAnonUser(anonuser)
-      return true
+      if (anonuser) {
+        questions.forEach(async question => {
+          let answer = await db.Answer.create({
+            answerId: uuidv4(),
+            value: req.body.answers[question.number - 1].val,
+            description: req.body.answers[question.number - 1].desc
+          })
+          answer.setQuestion(question)
+          answer.setAnonUser(anonuser)
+        })
+      }
+      return res.json({status: 'ok'})
     }).catch(err => console.log(err))
-    res.json({status: 'ok', resultId: id})
   })
 }

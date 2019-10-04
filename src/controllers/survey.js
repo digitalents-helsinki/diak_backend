@@ -16,7 +16,17 @@ module.exports = (app, db) => {
       archived: false,
       active: false
     })
-    .then(async survey => {
+    .then(async Survey => {
+      Survey.setQuestions(await db.Question.bulkCreate(req.body.questions.map(question => {
+        return {
+          questionId: uuidv4(),
+          name: question.name || uuidv4() + '_custom',
+          number: question.number,
+          title: question.title,
+          description: question.description,
+          help: question.help
+        }
+      })))
       // survey.setAdmin(req.body.adminId)
       if (req.body.anon == true) {
         let group = await db.UserGroup.create({
@@ -31,7 +41,7 @@ module.exports = (app, db) => {
             })
             group.addAnonUser(anonuser)
             sendMail(to, 'Uusi kysely', 
-            'Täytä anonyymi kysely http://localhost:8080/questionnaire/' + req.body.id + '/' + hash)
+            'Täytä anonyymi kysely http://localhost:8080/questionnaire/' + Survey.surveyId + '/' + hash)
           } else {
             /*
             sendMail(to, 'Uusi kysely',
@@ -47,15 +57,13 @@ module.exports = (app, db) => {
     .catch(err => console.log(err))
     res.json({ success: true })
   })
-  app.get('/survey/all', (req, res) => {
-    db.Survey.findAll().then((result) => res.json(result))
+  app.get('/survey/all', async (req, res) => {
+    res.json(await db.Survey.findAll())
   })
-  app.get('/survey/all/:id', (req, res) => {
-    db.Survey.findAll({
-      where: {
-        surveyId: req.params.id
-      }
-    }).then((result) => res.json(result))
+  app.get('/survey/:id', (req, res) => {
+    db.Survey.findByPk(req.params.id, {
+      include: [db.Question]
+    }).then((result) => res.json(result)).catch((err) => err)
   })
   app.post('/survey/delete', (req, res) => {
     db.Survey.destroy({

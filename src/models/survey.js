@@ -34,6 +34,7 @@ module.exports = (sequelize, DataTypes) => {
     Survey.belongsTo(models.Admin)
     Survey.hasMany(models.User)
     Survey.hasOne(models.UserGroup)
+    Survey.hasMany(models.Question)
   }
 
   return Survey
