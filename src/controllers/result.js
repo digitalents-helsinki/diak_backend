@@ -33,7 +33,11 @@ module.exports = (app, db) => {
     db.Survey.findByPk(req.params.id, {
       include: [{
         model: db.Question,
-        include: [db.Answer]
+        attributes: ["questionId", "name", "number", "title", "description", "SurveySurveyId"],
+        include: [{
+          model: db.Answer,
+          attributes: ["answerId", "value", "description", "AnonUserId", "QuestionQuestionId", "UserUserId"]
+        }]
       }]
     }).then((result) => res.json(result)).catch(err => console.log(err))
   })
