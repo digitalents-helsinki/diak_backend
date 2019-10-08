@@ -66,4 +66,26 @@ module.exports = (app, db) => {
       return res.json({status: 'ok'})
     }).catch(err => console.log(err))
   })
+  app.post("/testresult", async (req, res) => {
+    let testikysely = await db.Survey.findOne({
+      where: {
+        name: "testikysely"
+      }
+    })
+    db.Question.findAll({
+      where: {
+        SurveySurveyId: testikysely.surveyId
+      }
+    }).then(async questions => {
+      questions.forEach(async question => {
+        let answer = await db.Answer.create({
+          answerId: uuidv4(),
+          value: req.body.answers[question.number - 1].val,
+          description: req.body.answers[question.number - 1].desc
+        })
+        answer.setQuestion(question)
+      })
+      return res.json({status: 'ok'})
+    }).catch(err => console.log(err))
+  })
 }

@@ -57,13 +57,38 @@ module.exports = (app, db) => {
     .catch(err => console.log(err))
     res.json({ success: true })
   })
+  app.post('/testsurvey/', async (req, res) => {
+    db.Survey.findOrCreate({
+      where: {
+        name: "testikysely"
+      },
+      defaults: {
+        surveyId: uuidv4(),
+        name: "testikysely",
+        anon: true,
+        archived: false,
+        active: false
+      }
+    }).then(async ([testSurvey, created]) => {
+      if (created) {
+        testSurvey.setQuestions(await db.Question.bulkCreate([{name:"health",number:1},{name:"overcoming",number:2},{name:"living",number:3},{name:"coping",number:4},{name:"family",number:5},{name:"friends",number:6},{name:"finance",number:7},{name:"strengths",number:8},{name:"self_esteem",number:9},{name:"life_as_whole",number:10}].map(question => {
+          return {
+            questionId: uuidv4(),
+            name: question.name,
+            number: question.number
+          }
+        })))
+      }
+      return res.send(testSurvey.surveyId)
+    }).catch(err => console.log(err))
+  })
   app.get('/survey/all', async (req, res) => {
     res.json(await db.Survey.findAll())
   })
   app.get('/survey/:id', (req, res) => {
     db.Survey.findByPk(req.params.id, {
       include: [db.Question]
-    }).then((result) => res.json(result)).catch((err) => err)
+    }).then((result) => res.json(result)).catch(err => console.log(err))
   })
   app.post('/survey/delete', (req, res) => {
     db.Survey.destroy({
