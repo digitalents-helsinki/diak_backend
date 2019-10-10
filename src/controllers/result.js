@@ -9,8 +9,13 @@ module.exports = (app, db) => {
       }
     }).then((result) => res.json(result))
   })
-  app.get('/results', (req, res) => {
-    db.SurveyResult.findAll().then((result) => res.json(result))
+  app.get('/results/:groupId', (req, res) => {
+    db.SurveyResult.findAll({
+      where: {
+        id: req.params.groupId
+      }
+    }).then((result) => res.json(result))
+    .catch(err => console.log(err))
   })
   app.post("/result", (req, res) => {
     const id = uuidv4()

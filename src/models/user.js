@@ -18,6 +18,18 @@ module.exports = (sequelize, DataTypes) => {
     },
     salt: {
       type: DataTypes.TEXT
+    },
+    address: {
+      type: DataTypes.TEXT
+    },
+    phone_number: {
+      type: DataTypes.TEXT
+    },
+    birth_date: {
+      type: DataTypes.DATE
+    },
+    gender: {
+      type: DataTypes.TEXT
     }
   })
 

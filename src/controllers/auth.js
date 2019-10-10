@@ -6,16 +6,29 @@ const { randomBytes } = require('crypto')
 module.exports = (app, db) => {
   app.post('/signup', async (req, res) => {
     const salt = randomBytes(32)
-    const hashedPassword = await argon2.hash(req.body.password, { salt });
-    db.User.create({
-      userId: uuidv4(),
-      role: 'user',
-      email: req.body.email,
-      password: hashedPassword,
-      salt: salt.toString('hex')
+    const hashedPassword = await argon2.hash(req.body.password, { salt })
+    db.User.findOne({ where: {email: req.body.email }})
+    .then(obj => {
+      if(obj) {
+        return obj.update({
+          role: 'user',
+          password: hashedPassword,
+          salt: salt.toString('hex')
+        })
+      } else {
+        return db.User.create({
+          userId: uuidv4(),
+          role: 'user',
+          email: req.body.email,
+          password: hashedPassword,
+          salt: salt.toString('hex')
+        })
+      }
     })
+    .catch(err => console.log(err))
     res.json({ success: 'true' })
   })
+
   app.post('/signin', async (req, res) => {
     const userRecord = await db.User.findOne({ 
       where: {
@@ -47,7 +60,7 @@ module.exports = (app, db) => {
         email: user.email,
         exp: exp.getTime() / 100
       },
-      "SSHH" // TODO: change into env variable
+      process.env.JWT_KEY
     )
   }
 }

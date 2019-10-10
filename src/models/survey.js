@@ -32,7 +32,6 @@ module.exports = (sequelize, DataTypes) => {
 
   Survey.associate = models => {
     Survey.belongsTo(models.Admin)
-    Survey.hasMany(models.User)
     Survey.hasOne(models.UserGroup)
   }
 
