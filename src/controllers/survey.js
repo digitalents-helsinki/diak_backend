@@ -14,10 +14,8 @@ module.exports = (app, db) => {
       endDate: req.body.endDate,
       respondents_size: req.body.respondents_size,
       archived: false,
-      active: false
-    })
-    .then(async Survey => {
-      Survey.setQuestions(await db.Question.bulkCreate(req.body.questions.map(question => {
+      active: false,
+      Questions: req.body.questions.map(question => {
         return {
           questionId: uuidv4(),
           name: question.name || uuidv4() + '_custom',
@@ -26,7 +24,10 @@ module.exports = (app, db) => {
           description: question.description,
           help: question.help
         }
-      })))
+      })
+    },
+    { include: [db.Question] }
+    ).then(async Survey => {
       // survey.setAdmin(req.body.adminId)
       if (req.body.anon == true) {
         let group = await db.UserGroup.create({
@@ -67,18 +68,17 @@ module.exports = (app, db) => {
         name: "testikysely",
         anon: true,
         archived: false,
-        active: false
-      }
-    }).then(async ([testSurvey, created]) => {
-      if (created) {
-        testSurvey.setQuestions(await db.Question.bulkCreate([{name:"health",number:1},{name:"overcoming",number:2},{name:"living",number:3},{name:"coping",number:4},{name:"family",number:5},{name:"friends",number:6},{name:"finance",number:7},{name:"strengths",number:8},{name:"self_esteem",number:9},{name:"life_as_whole",number:10}].map(question => {
+        active: false,
+        Questions: [{name:"health",number:1},{name:"overcoming",number:2},{name:"living",number:3},{name:"coping",number:4},{name:"family",number:5},{name:"friends",number:6},{name:"finance",number:7},{name:"strengths",number:8},{name:"self_esteem",number:9},{name:"life_as_whole",number:10}].map(question => {
           return {
             questionId: uuidv4(),
             name: question.name,
             number: question.number
           }
-        })))
-      }
+        })
+      },
+      include: [ db.Question ]
+    }).then(async ([testSurvey]) => {
       return res.send(testSurvey.surveyId)
     }).catch(err => console.log(err))
   })

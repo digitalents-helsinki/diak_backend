@@ -35,6 +35,7 @@ module.exports = (sequelize, DataTypes) => {
     Survey.hasMany(models.User)
     Survey.hasOne(models.UserGroup)
     Survey.hasMany(models.Question)
+    Survey.hasMany(models.Answer)
   }
 
   return Survey

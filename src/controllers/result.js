@@ -14,9 +14,15 @@ module.exports = (app, db) => {
           await db.Survey.findByPk(req.params.id, {
             include: [{
               model: db.Question,
+              attributes: {
+                exclude: ['createdAt', 'updatedAt']
+              },
               required: true,
               include: [{
                 model: db.Answer,
+                attributes: {
+                  exclude: ['createdAt', 'updatedAt']
+                },
                 where: {
                   AnonUserId: anonUser.id
                 }
@@ -33,38 +39,57 @@ module.exports = (app, db) => {
     db.Survey.findByPk(req.params.id, {
       include: [{
         model: db.Question,
-        attributes: ["questionId", "name", "number", "title", "description", "SurveySurveyId"],
+        attributes: {
+          exclude: ['createdAt', 'updatedAt']
+        },
         include: [{
           model: db.Answer,
-          attributes: ["answerId", "value", "description", "AnonUserId", "QuestionQuestionId", "UserUserId"]
+          attributes: {
+            exclude: ['createdAt', 'updatedAt']
+          }
         }]
       }]
     }).then((result) => res.json(result)).catch(err => console.log(err))
   })
-  app.post("/result", (req, res) => {
-    db.Question.findAll({
-      where: {
-        SurveySurveyId: req.body.surveyId
-      }
-    }).then(async questions => {
-      let anonuser = await db.AnonUser.findOne({
+  app.post("/result", async (req, res) => {
+
+    let transaction;
+
+    try {
+      transaction = await db.sequelize.transaction();
+
+      const anonuser = await db.AnonUser.findOne({
         where: {
           entry_hash: req.body.anonId
-        }
+        },
+        attributes: ["id"],
+        lock: true,
+        rejectOnEmpty: true,
+        transaction
       })
-      if (anonuser) {
-        questions.forEach(async question => {
-          let answer = await db.Answer.create({
-            answerId: uuidv4(),
-            value: req.body.answers[question.number - 1].val,
-            description: req.body.answers[question.number - 1].desc
-          })
-          answer.setQuestion(question)
-          answer.setAnonUser(anonuser)
-        })
+
+      for (const answer of req.body.answers) {
+        const createdAnswer = await db.Answer.create({
+          answerId: uuidv4(),
+          value: answer.val,
+          description: answer.desc
+        }, {transaction})
+        await Promise.all([
+          createdAnswer.setSurvey(req.body.surveyId, {transaction}),
+          createdAnswer.setQuestion(answer.id, {transaction}),
+          createdAnswer.setAnonUser(anonuser, {transaction})
+        ])
       }
-      return res.json({status: 'ok'})
-    }).catch(err => console.log(err))
+
+      await transaction.commit()
+
+    } catch (err) {
+      await transaction.rollback()
+      console.log(err)
+    } finally {
+      if (transaction.finished === 'commit') res.json({status: "ok"})
+    }
+
   })
   app.post("/testresult", async (req, res) => {
     let testikysely = await db.Survey.findOne({
@@ -83,6 +108,7 @@ module.exports = (app, db) => {
           value: req.body.answers[question.number - 1].val,
           description: req.body.answers[question.number - 1].desc
         })
+        answer.setSurvey(testikysely.surveyId)
         answer.setQuestion(question)
       })
       return res.json({status: 'ok'})

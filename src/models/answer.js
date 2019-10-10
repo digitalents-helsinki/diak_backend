@@ -16,8 +16,10 @@ module.exports = (sequelize, DataTypes) => {
   })
 
   Answer.associate = models => {
+    Answer.belongsTo(models.Survey)
     Answer.belongsTo(models.Question)
     Answer.belongsTo(models.User)
+    Answer.belongsTo(models.AnonUser)
     Answer.belongsTo(models.AnonUser)
   }
 
