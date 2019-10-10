@@ -14,9 +14,20 @@ module.exports = (app, db) => {
       endDate: req.body.endDate,
       respondents_size: req.body.respondents_size,
       archived: false,
-      active: false
-    })
-    .then(async survey => {
+      active: false,
+      Questions: req.body.questions.map(question => {
+        return {
+          questionId: uuidv4(),
+          name: question.name || uuidv4() + '_custom',
+          number: question.number,
+          title: question.title,
+          description: question.description,
+          help: question.help
+        }
+      })
+    },
+    { include: [db.Question] }
+    ).then(async Survey => {
       // survey.setAdmin(req.body.adminId)
       let group = await db.UserGroup.create({
         id: uuidv4()
@@ -56,15 +67,37 @@ module.exports = (app, db) => {
     .catch(err => console.log(err))
     res.json({ success: true })
   })
-  app.get('/survey/all', (req, res) => {
-    db.Survey.findAll().then((result) => res.json(result))
-  })
-  app.get('/survey/all/:id', (req, res) => {
-    db.Survey.findAll({
+  app.post('/testsurvey/', async (req, res) => {
+    db.Survey.findOrCreate({
       where: {
-        surveyId: req.params.id
-      }
-    }).then((result) => res.json(result))
+        name: "testikysely"
+      },
+      defaults: {
+        surveyId: uuidv4(),
+        name: "testikysely",
+        anon: true,
+        archived: false,
+        active: false,
+        Questions: [{name:"health",number:1},{name:"overcoming",number:2},{name:"living",number:3},{name:"coping",number:4},{name:"family",number:5},{name:"friends",number:6},{name:"finance",number:7},{name:"strengths",number:8},{name:"self_esteem",number:9},{name:"life_as_whole",number:10}].map(question => {
+          return {
+            questionId: uuidv4(),
+            name: question.name,
+            number: question.number
+          }
+        })
+      },
+      include: [ db.Question ]
+    }).then(async ([testSurvey]) => {
+      return res.send(testSurvey.surveyId)
+    }).catch(err => console.log(err))
+  })
+  app.get('/survey/all', async (req, res) => {
+    res.json(await db.Survey.findAll())
+  })
+  app.get('/survey/:id', (req, res) => {
+    db.Survey.findByPk(req.params.id, {
+      include: [db.Question]
+    }).then((result) => res.json(result)).catch(err => console.log(err))
   })
   app.post('/survey/delete', (req, res) => {
     db.Survey.destroy({
