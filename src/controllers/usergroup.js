@@ -6,12 +6,15 @@ module.exports = (app, db) => {
       where: {
         id: req.params.id
       }
-    }).then((result) => res.json(result))
+    })
+    .then((result) => res.json(result))
+    .catch(err => console.log(err))
   })
   app.post("/usergroup/", (req, res) => {
     db.models.UserGroup.create({
       id: uuidv4()
-    })
+    }).then(group => group.setAnonUsers(req.body.users))
+    .catch(err => console.log(err))
     res.json({status: 'ok'})
   })
 }
