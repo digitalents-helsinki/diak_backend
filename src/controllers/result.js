@@ -59,14 +59,20 @@ module.exports = (app, db) => {
       transaction = await db.sequelize.transaction();
 
       const anonuser = await db.AnonUser.findOne({
-        where: {
-          entry_hash: req.body.anonId
-        },
         attributes: ["id"],
         lock: true,
         rejectOnEmpty: true,
         transaction
       })
+
+      const survey = await db.Survey.findByPk(req.body.surveyId, {
+        attributes: ["startDate", "endDate"],
+        lock: true,
+        rejectOnEmpty: true,
+        transaction
+      })
+      const currentTime = await Date.now()
+      if (((result.startDate === null) || (result.startDate.getTime() < currentTime)) && ((result.endDate === null) || (currentTime < result.endDate.getTime()))) throw new Error()
 
       for (const answer of req.body.answers) {
         const createdAnswer = await db.Answer.create({

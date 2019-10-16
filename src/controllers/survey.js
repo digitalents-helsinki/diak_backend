@@ -97,7 +97,16 @@ module.exports = (app, db) => {
   app.get('/survey/:id', (req, res) => {
     db.Survey.findByPk(req.params.id, {
       include: [db.Question]
-    }).then((result) => res.json(result)).catch(err => console.log(err))
+    }).then((result) => {
+      const currentTime = Date.now()
+      if (((result.startDate === null) || (result.startDate.getTime() < currentTime)) && ((result.endDate === null) || (currentTime < result.endDate.getTime()))){
+        return res.json(result)
+      }  else {
+        return res.send("survey not active")
+      }
+    }).catch(err => console.log(err))
+  
+
   })
   app.post('/survey/delete', (req, res) => {
     db.Survey.destroy({
