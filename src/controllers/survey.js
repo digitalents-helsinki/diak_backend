@@ -42,7 +42,10 @@ module.exports = (app, db) => {
             })
             group.addAnonUser(anonuser)
             sendMail(to, 'Uusi kysely', 
-            'Täytä anonyymi kysely http://localhost:8080/questionnaire/' + Survey.surveyId + '/' + hash)
+            `Täytä anonyymi kysely http://localhost:8080/questionnaire/${Survey.surveyId}/${hash}
+            <br><br>
+            ${req.body.message}
+            `)
           } else {
             /*
             sendMail(to, 'Uusi kysely',
@@ -108,9 +111,11 @@ module.exports = (app, db) => {
     })
   })
   app.get('/surveys/:userId', (req, res) => {
-    // TODO
-    db.Survey.findAll({
-      
-    })
+    db.User.findOne({      
+      where: {
+        userId: req.params.userId
+      },
+      include: [db.Survey]
+    }).then(response => res.json(response)).catch(err => console.log(err))
   })
 }
