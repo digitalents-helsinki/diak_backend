@@ -5,5 +5,12 @@ module.exports = (app, db) => {
         userId: req.params.id
       }
     }).then((result => res.json(result)))
+  }),
+  app.post('/user/:id/info/update', (req, res) => {
+    db.User.update({
+      where: {
+        userId: req.params.id
+      }
+    })
   })
 }
