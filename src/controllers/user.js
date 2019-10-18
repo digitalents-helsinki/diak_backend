@@ -6,11 +6,18 @@ module.exports = (app, db) => {
       }
     }).then((result => res.json(result)))
   }),
-  app.post('/user/:id/info/update', (req, res) => {
-    db.User.update({
-      where: {
-        userId: req.params.id
+  app.post('/user/:userId/info/update', (req, res) => {
+    db.User.update(
+      {
+        name: req.body.personalinfo.name,
+        address: req.body.personalinfo.address,
+        phone_number: req.body.personalinfo.phonenumber
+      },
+      {
+        where: {
+          userId: req.params.userId
+        }
       }
-    })
+    )
   })
 }

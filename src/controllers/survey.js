@@ -47,6 +47,21 @@ module.exports = (app, db) => {
             ${req.body.message}
             `)
           } else {
+            db.User.findOne({ where: {email: to}})
+            .then(async obj => {
+              if(obj) {
+                obj.addSurvey(Survey)
+                return group.addUser(obj)
+              } else {
+                let user = await db.User.create({
+                  userId: uuidv4(),
+                  email: to
+                })
+                user.addSurvey(Survey)
+                return group.addUser(user)
+              }
+            })
+            .catch(err => console.log(err))
             /*
             sendMail(to, 'Uusi kysely',
             'Täytä kysely http://localhost:8080/login/')
@@ -120,11 +135,11 @@ module.exports = (app, db) => {
     })
   })
   app.get('/surveys/:userId', (req, res) => {
-    db.User.findOne({      
+    db.User.findOne({
       where: {
         userId: req.params.userId
       },
       include: [db.Survey]
-    }).then(response => res.json(response)).catch(err => console.log(err))
+    }).then(result => result ? res.json(result) : res.json({ err: 'no user found' })).catch(err => res.json({ err: err }))
   })
 }
