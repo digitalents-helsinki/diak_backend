@@ -11,6 +11,7 @@ module.exports = (app, db) => {
       {
         name: req.body.personalinfo.name,
         address: req.body.personalinfo.address,
+        gender:req.body.personalinfo.gender,
         phone_number: req.body.personalinfo.phonenumber
       },
       {
