@@ -66,13 +66,17 @@ module.exports = (app, db) => {
       })
 
       const survey = await db.Survey.findByPk(req.body.surveyId, {
-        attributes: ["startDate", "endDate"],
+        attributes: ["surveyId", "startDate", "endDate"],
         lock: true,
         rejectOnEmpty: true,
         transaction
       })
-      const currentTime = await Date.now()
-      if (((result.startDate === null) || (result.startDate.getTime() < currentTime)) && ((result.endDate === null) || (currentTime < result.endDate.getTime()))) throw new Error()
+      await survey.increment('responses', {
+        transaction
+      })
+      
+      const currentTime = Date.now()
+      if (((survey.startDate !== null) && (survey.startDate.getTime() < currentTime)) && ((survey.endDate !== null) && (currentTime < survey.endDate.getTime()))) throw new Error("Survey not active")
 
       for (const answer of req.body.answers) {
         const createdAnswer = await db.Answer.create({
@@ -103,6 +107,7 @@ module.exports = (app, db) => {
         name: "testikysely"
       }
     })
+    testikysely.increment('responses')
     db.Question.findAll({
       where: {
         SurveySurveyId: testikysely.surveyId

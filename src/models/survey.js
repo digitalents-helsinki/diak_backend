@@ -22,6 +22,10 @@ module.exports = (sequelize, DataTypes) => {
     respondents_size: {
       type: DataTypes.INTEGER
     },
+    responses: {
+      type: DataTypes.INTEGER,
+      defaultValue: 0
+    },
     archived: {
       type: DataTypes.BOOLEAN
     },
