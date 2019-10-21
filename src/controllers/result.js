@@ -66,7 +66,7 @@ module.exports = (app, db) => {
       })
 
       const survey = await db.Survey.findByPk(req.body.surveyId, {
-        attributes: ["surveyId", "startDate", "endDate"],
+        attributes: ["surveyId", "active", "startDate", "endDate"],
         lock: true,
         rejectOnEmpty: true,
         transaction
@@ -76,7 +76,7 @@ module.exports = (app, db) => {
       })
       
       const currentTime = Date.now()
-      if (((survey.startDate !== null) && (survey.startDate.getTime() < currentTime)) && ((survey.endDate !== null) && (currentTime < survey.endDate.getTime()))) throw new Error("Survey not active")
+      if (!survey.active || ((survey.startDate !== null) && (survey.startDate.getTime() < currentTime)) && ((survey.endDate !== null) && (currentTime < survey.endDate.getTime()))) throw new Error("Survey not active")
 
       for (const answer of req.body.answers) {
         const createdAnswer = await db.Answer.create({

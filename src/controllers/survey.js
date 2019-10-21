@@ -10,11 +10,11 @@ module.exports = (app, db) => {
       surveyId: uuidv4(),
       name: req.body.id,
       anon: req.body.anon,
-      startDate: req.body.startDate,
-      endDate: req.body.endDate,
+      startDate: req.body.startDate ? new Date(req.body.startDate).setHours(0, 0, 0) : null,
+      endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59) : null,
       respondents_size: req.body.respondents_size,
       archived: false,
-      active: false,
+      active: true,
       Questions: req.body.questions.map(question => {
         return {
           questionId: uuidv4(),
@@ -86,7 +86,7 @@ module.exports = (app, db) => {
         name: "testikysely",
         anon: true,
         archived: false,
-        active: false,
+        active: true,
         Questions: [{name:"health",number:1},{name:"overcoming",number:2},{name:"living",number:3},{name:"coping",number:4},{name:"family",number:5},{name:"friends",number:6},{name:"finance",number:7},{name:"strengths",number:8},{name:"self_esteem",number:9},{name:"life_as_whole",number:10}].map(question => {
           return {
             questionId: uuidv4(),
@@ -108,14 +108,51 @@ module.exports = (app, db) => {
       include: [db.Question]
     }).then((result) => {
       const currentTime = Date.now()
-      if (((result.startDate === null) || (result.startDate.getTime() < currentTime)) && ((result.endDate === null) || (currentTime < result.endDate.getTime()))){
+      if (result.active && ((result.startDate === null) || (result.startDate.getTime() < currentTime)) && ((result.endDate === null) || (currentTime < result.endDate.getTime()))){
         return res.json(result)
       }  else {
         return res.send("survey not active")
       }
     }).catch(err => console.log(err))
-  
+  })
+  app.post('/survey/update', async (req, res) => {
+    
+    let transaction
+    let survey
 
+    try {
+      transaction = await db.sequelize.transaction();
+
+      survey = await db.Survey.findByPk(req.body.surveyId, {
+        lock: true,
+        rejectOnEmpty: true,
+        transaction
+      })
+
+      await survey.update({
+        name: req.body.name,
+        endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59) : null
+      }, {transaction})
+
+      transaction.commit()
+
+    } catch(err) {
+      await transaction.rollback()
+      console.log(err)
+    } finally {
+      if (transaction.finished === 'commit') res.json(survey)
+      else res.send('Survey update failed')
+    }
+  })
+  app.post('/survey/suspendactivate', (req, res) => {
+    db.Survey.update({
+        active: req.body.active
+      },{
+      where: {
+        surveyId: req.body.id
+      },
+      returning: []
+    }).then(([,[survey]]) => survey ? res.json(survey) : res.send("No survey found")).catch(err => res.send("Error"))
   })
   app.post('/survey/delete', (req, res) => {
     db.Survey.destroy({
