@@ -116,7 +116,7 @@ module.exports = (app, db) => {
       include: [db.Question]
     }).then((result) => {
       const currentTime = Date.now()
-      if (result.active && ((result.startDate === null) || (result.startDate.getTime() < currentTime)) && ((result.endDate === null) || (currentTime < result.endDate.getTime()))){
+      if (!result.archived && result.active && ((result.startDate === null) || (result.startDate.getTime() < currentTime)) && ((result.endDate === null) || (currentTime < result.endDate.getTime()))){
         return res.json(result)
       }  else {
         return res.send("survey not active")
@@ -196,15 +196,14 @@ module.exports = (app, db) => {
         surveyId: req.body.id
       },
       returning: []
-    }).then(([,[survey]]) => survey ? res.json(survey) : res.send("No survey found")).catch(err => res.send("Error"))
+    }).then(([,[survey]]) => survey ? res.send("Survey state changed succesfully") : res.send("No survey found")).catch(err => res.json({ err: err }))
   })
   app.post('/survey/delete', (req, res) => {
     db.Survey.destroy({
       where: {
         surveyId: req.body.id
       }
-    })
-    res.json({status: 'ok'})
+    }).then(rows => rows ? res.send("Survey deleted succesfully") : res.send("No survey found")).catch(err => res.json({ err: err }))
   })
   app.post('/survey/archive', (req, res) => {
     db.Survey.update({
@@ -212,8 +211,9 @@ module.exports = (app, db) => {
       }, {
       where: {
         surveyId: req.body.id
-      }
-    })
+      },
+      returning: []
+    }).then(([,[survey]]) => survey ? res.send("Survey archived succesfully") : res.send("No survey found")).catch(err => res.json({ err: err }))
   })
   app.get('/surveys/:userId', (req, res) => {
     db.User.findOne({
