@@ -71,14 +71,13 @@ module.exports = (app, db) => {
         rejectOnEmpty: true,
         transaction
       })
-      await survey.increment('responses', {
-        transaction
-      })
+      await survey.increment('responses', {transaction})
       
       const currentTime = Date.now()
       if (!survey.active || ((survey.startDate !== null) && (survey.startDate.getTime() < currentTime)) && ((survey.endDate !== null) && (currentTime < survey.endDate.getTime()))) throw new Error("Survey not active")
 
       for (const answer of req.body.answers) {
+        if (answer.description && answer.description.length > 2000) throw new Error("Answer is too long")
         const createdAnswer = await db.Answer.create({
           answerId: uuidv4(),
           value: answer.val,
@@ -98,6 +97,7 @@ module.exports = (app, db) => {
       console.log(err)
     } finally {
       if (transaction.finished === 'commit') res.json({status: "ok"})
+      else res.json({status: "not ok"})
     }
 
   })

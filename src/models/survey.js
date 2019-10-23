@@ -10,6 +10,9 @@ module.exports = (sequelize, DataTypes) => {
     name: {
       type: DataTypes.TEXT
     },
+    message: {
+      type: DataTypes.TEXT
+    },
     anon: {
       type: DataTypes.BOOLEAN
     },

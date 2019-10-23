@@ -6,6 +6,9 @@ module.exports = (sequelize, DataTypes) => {
     id: {
       type: DataTypes.UUID,
       primaryKey: true
+    },
+    respondents: {
+      type: DataTypes.ARRAY(DataTypes.TEXT)
     }
   })
 

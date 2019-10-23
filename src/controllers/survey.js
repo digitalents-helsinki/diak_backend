@@ -6,9 +6,13 @@ const crypto = require('crypto')
 
 module.exports = (app, db) => {
   app.post('/survey/create', (req, res, next) => {
+    if (req.body.questions.some(question => !question.name && (question.title.length > 100 || question.description.length > 200 || question.help.length > 1000))) {
+      return res.json({success: false})
+    }
     db.Survey.create({
       surveyId: uuidv4(),
       name: req.body.id,
+      message: req.body.message,
       anon: req.body.anon,
       startDate: req.body.startDate ? new Date(req.body.startDate).setHours(0, 0, 0) : null,
       endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59) : null,
@@ -31,8 +35,10 @@ module.exports = (app, db) => {
       // survey.setAdmin(req.body.adminId)
       if (req.body.anon == true) {
         let group = await db.UserGroup.create({
-          id: uuidv4()
+          id: uuidv4(),
+          respondents: req.body.to
         })
+        group.setSurvey(Survey)
         req.body.to.map(async to => {
           if (req.body.anon === true) {
             const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
@@ -44,7 +50,7 @@ module.exports = (app, db) => {
             sendMail(to, 'Uusi kysely', 
             `Täytä anonyymi kysely http://localhost:8080/questionnaire/${Survey.surveyId}/${hash}
             <br><br>
-            ${req.body.message}
+            ${Survey.message}
             `)
           } else {
             db.User.findOne({ where: {email: to}})
@@ -101,7 +107,9 @@ module.exports = (app, db) => {
     }).catch(err => console.log(err))
   })
   app.get('/survey/all', async (req, res) => {
-    res.json(await db.Survey.findAll())
+    res.json(await db.Survey.findAll({
+      include: [db.UserGroup]
+    }))
   })
   app.get('/survey/:id', (req, res) => {
     db.Survey.findByPk(req.params.id, {
@@ -118,21 +126,54 @@ module.exports = (app, db) => {
   app.post('/survey/update', async (req, res) => {
     
     let transaction
-    let survey
 
     try {
       transaction = await db.sequelize.transaction();
 
-      survey = await db.Survey.findByPk(req.body.surveyId, {
+      const Survey = await db.Survey.findByPk(req.body.surveyId, {
         lock: true,
         rejectOnEmpty: true,
         transaction
       })
 
-      await survey.update({
+      await Survey.update({
         name: req.body.name,
-        endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59) : null
+        endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59) : null,
+        respondents_size: Survey.respondents_size + req.body.to.length
       }, {transaction})
+
+      if (req.body.to.length) {
+        const group = await db.UserGroup.findOne({
+          where: {
+            SurveySurveyId: Survey.surveyId
+          },
+          lock: true,
+          rejectOnEmpty: true,
+          transaction
+        })
+
+        await group.update({
+          respondents: [...group.respondents, ...req.body.to]
+        }, {transaction})
+
+        for (const to of req.body.to) {
+          if (Survey.anon) {
+            const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
+            let anonuser = await db.AnonUser.create({
+              id: uuidv4(),
+              entry_hash: hash
+            }, {transaction})
+            await group.addAnonUser(anonuser, {transaction})
+            sendMail(to, 'Uusi kysely', 
+            `Täytä anonyymi kysely http://localhost:8080/questionnaire/${Survey.surveyId}/${hash}
+            <br><br>
+            ${Survey.message}
+            `)
+          } else {
+            //
+          }
+        }
+      }
 
       transaction.commit()
 
@@ -140,8 +181,11 @@ module.exports = (app, db) => {
       await transaction.rollback()
       console.log(err)
     } finally {
-      if (transaction.finished === 'commit') res.json(survey)
-      else res.send('Survey update failed')
+      if (transaction.finished === 'commit') {
+        res.json(await db.Survey.findByPk(req.body.surveyId, {
+          include: [db.UserGroup]
+        }))
+      } else res.send('Survey update failed')
     }
   })
   app.post('/survey/suspendactivate', (req, res) => {
