@@ -6,7 +6,7 @@ const crypto = require('crypto')
 
 module.exports = (app, db) => {
   app.post('/survey/create', (req, res, next) => {
-    if (req.body.questions.some(question => !question.name && (question.title.length > 100 || question.description.length > 200 || question.help.length > 1000))) {
+    if (req.body.questions.some(question => !question.name && (question.title.length > 100 || question.description.length > 200 || (question.help && question.help.length > 1000)))) {
       return res.json({success: false})
     }
     db.Survey.create({
