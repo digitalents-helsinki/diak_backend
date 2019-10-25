@@ -78,7 +78,7 @@ module.exports = (app, db) => {
       await survey.increment('responses', {transaction})
       
       const currentTime = Date.now()
-      if (survey.archived || !survey.active || ((survey.startDate !== null) && (survey.startDate.getTime() < currentTime)) && ((survey.endDate !== null) && (currentTime < survey.endDate.getTime()))) throw new Error("Survey not active")
+      if (survey.archived || !survey.active || ((survey.startDate !== null) && (currentTime < survey.startDate.getTime())) || ((survey.endDate !== null) && (survey.endDate.getTime() < currentTime))) throw new Error("Survey not active")
 
       for (const answer of req.body.answers) {
         if (answer.description && answer.description.length > 2000) throw new Error("Answer is too long")
