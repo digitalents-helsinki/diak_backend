@@ -3,10 +3,13 @@ const sendMail = require('../mail')
 const checkToken = require('../jwt')
 
 module.exports = (app, db) => {
-  app.get('/result/:id', (req, res) => {
+
+  /* get anon users survey result */
+
+  app.get('/anon/result/:id', (req, res) => {
     db.AnonUser.findOne({
       where: {
-        entry_hash: req.body.anonId
+        entry_hash: req.params.id
       },
       attributes: ['id']
     }).then(async anonUser => {
@@ -36,6 +39,45 @@ module.exports = (app, db) => {
       }
     }).catch(err => console.log(err))
   })
+
+  /* get auth users survey result */
+
+  app.get('/auth/result/:id', (req, res) => {
+    db.User.findOne({
+      where: {
+        userId: req.body.anonId
+      },
+      attributes: ['id']
+    }).then(async user => {
+      if (user) {
+        return res.json(
+          await db.Survey.findByPk(req.params.id, {
+            include: [{
+              model: db.Question,
+              attributes: {
+                exclude: ['createdAt', 'updatedAt']
+              },
+              required: true,
+              include: [{
+                model: db.Answer,
+                attributes: {
+                  exclude: ['createdAt', 'updatedAt']
+                },
+                where: {
+                  userId: user.id
+                }
+              }]
+            }]
+          })
+        )
+      } else {
+        return res.send("Error")
+      }
+    }).catch(err => console.log(err))
+  })
+
+  /* get surveys results */
+
   app.get('/results/:id', (req, res) => {
     db.Survey.findByPk(req.params.id, {
       include: [{
@@ -52,7 +94,10 @@ module.exports = (app, db) => {
       }]
     }).then((result) => res.json(result)).catch(err => console.log(err))
   })
-  app.post("/result", async (req, res) => {
+
+  /* create anon users survey result */
+
+  app.post("/anon/result/create", async (req, res) => {
 
     let transaction;
 
@@ -77,8 +122,8 @@ module.exports = (app, db) => {
       })
       await survey.increment('responses', {transaction})
       
-      const currentTime = Date.now()
-      if (survey.archived || !survey.active || ((survey.startDate !== null) && (survey.startDate.getTime() < currentTime)) && ((survey.endDate !== null) && (currentTime < survey.endDate.getTime()))) throw new Error("Survey not active")
+      //const currentTime = Date.now()
+      //if (((survey.startDate !== null) && (survey.startDate.getTime() < currentTime)) && ((survey.endDate !== null) && (currentTime < survey.endDate.getTime()))) throw new Error("Survey not active")
 
       for (const answer of req.body.answers) {
         if (answer.description && answer.description.length > 2000) throw new Error("Answer is too long")
@@ -177,7 +222,63 @@ module.exports = (app, db) => {
     
     res.send("Email sent")
   })
-  app.post("/testresult", async (req, res) => {
+
+  /* create auth users survey result */
+
+  app.post("/auth/result/create", async (req, res) => {
+
+    let transaction;
+
+    try {
+      transaction = await db.sequelize.transaction();
+
+      const user = await db.User.findOne({
+        attributes: ["userId"],
+        lock: true,
+        rejectOnEmpty: true,
+        transaction
+      })
+
+      const survey = await db.Survey.findByPk(req.body.surveyId, {
+        attributes: ["surveyId", "startDate", "endDate"],
+        lock: true,
+        rejectOnEmpty: true,
+        transaction
+      })
+      await survey.increment('responses', {
+        transaction
+      })
+      
+      //const currentTime = Date.now()
+      //if (((survey.startDate !== null) && (survey.startDate.getTime() < currentTime)) && ((survey.endDate !== null) && (currentTime < survey.endDate.getTime()))) throw new Error("Survey not active")
+
+      for (const answer of req.body.answers) {
+        const createdAnswer = await db.Answer.create({
+          answerId: uuidv4(),
+          value: answer.val,
+          description: answer.desc
+        }, {transaction})
+        await Promise.all([
+          createdAnswer.setSurvey(req.body.surveyId, {transaction}),
+          createdAnswer.setQuestion(answer.id, {transaction}),
+          createdAnswer.setUser(user, {transaction})
+        ])
+      }
+
+      await transaction.commit()
+
+    } catch (err) {
+      await transaction.rollback()
+      console.log(err)
+    } finally {
+      if (transaction.finished === 'commit') res.json({status: "ok"})
+    }
+
+  })
+
+  /* create test surveys result */
+
+  app.post("/testresult/create", async (req, res) => {
     let testikysely = await db.Survey.findOne({
       where: {
         name: "testikysely"

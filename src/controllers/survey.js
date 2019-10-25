@@ -33,50 +33,45 @@ module.exports = (app, db) => {
     { include: [db.Question] }
     ).then(async Survey => {
       // survey.setAdmin(req.body.adminId)
-      if (req.body.anon == true) {
-        let group = await db.UserGroup.create({
-          id: uuidv4(),
-          respondents: req.body.to
-        })
-        group.setSurvey(Survey)
-        req.body.to.map(async to => {
-          if (req.body.anon === true) {
-            const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
-            let anonuser = await db.AnonUser.create({
-              id: uuidv4(),
-              entry_hash: hash
-            })
-            group.addAnonUser(anonuser)
-            sendMail(to, 'Uusi kysely', 
-            `Täytä anonyymi kysely http://localhost:8080/questionnaire/${Survey.surveyId}/${hash}
-            <br><br>
-            ${Survey.message}
-            `)
-          } else {
-            db.User.findOne({ where: {email: to}})
-            .then(async obj => {
-              if(obj) {
-                obj.addSurvey(Survey)
-                return group.addUser(obj)
-              } else {
-                let user = await db.User.create({
-                  userId: uuidv4(),
-                  email: to
-                })
-                user.addSurvey(Survey)
-                return group.addUser(user)
-              }
-            })
-            .catch(err => console.log(err))
-            /*
-            sendMail(to, 'Uusi kysely',
-            'Täytä kysely http://localhost:8080/login/')
-            */
-          }
-        })
-      } else {
-        // survey.setUsers(req.body.to)
-      }
+      let group = await db.UserGroup.create({
+        id: uuidv4()
+      })
+      req.body.to.map(async to => {
+        if (req.body.anon === true) {
+          const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
+          let anonuser = await db.AnonUser.create({
+            id: uuidv4(),
+            entry_hash: hash
+          })
+          group.addAnonUser(anonuser)
+          sendMail(to, 'Uusi kysely', 
+          `Täytä anonyymi kysely http://localhost:8080/anon/questionnaire/${Survey.surveyId}/${hash}
+          <br><br>
+          ${req.body.message}
+          `)
+        } else {
+          db.User.findOne({ where: {email: to}})
+          .then(async obj => {
+            if(obj) {
+              obj.addSurvey(Survey)
+              group.addUser(obj)
+              sendMail(to, 'Uusi kysely',
+              `Täytä kysely http://localhost:8080/auth/questionnaire/${Survey.surveyId}/${obj.userId}`)
+            } else {
+              let user = await db.User.create({
+                userId: uuidv4(),
+                email: to
+              })
+              user.addSurvey(Survey)
+              group.addUser(user)
+              sendMail(to, 'Uusi kysely',
+              `Täytä kysely http://localhost:8080/auth/questionnaire/${Survey.surveyId}/${user.userId}`)
+            }
+            return true
+          })
+          .catch(err => console.log(err))
+        }
+      })
       return true
     })
     .catch(err => console.log(err))
@@ -216,11 +211,11 @@ module.exports = (app, db) => {
     }).then(([,[survey]]) => survey ? res.send("Survey archived succesfully") : res.send("No survey found")).catch(err => res.json({ err: err }))
   })
   app.get('/surveys/:userId', (req, res) => {
-    db.User.findOne({
+    db.User.findAll({
       where: {
         userId: req.params.userId
       },
-      include: [db.Survey]
+      include: [ db.Survey ]
     }).then(result => result ? res.json(result) : res.json({ err: 'no user found' })).catch(err => res.json({ err: err }))
   })
 }
