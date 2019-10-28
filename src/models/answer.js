@@ -20,7 +20,6 @@ module.exports = (sequelize, DataTypes) => {
     Answer.belongsTo(models.Question)
     Answer.belongsTo(models.User)
     Answer.belongsTo(models.AnonUser)
-    Answer.belongsTo(models.AnonUser)
   }
 
   return Answer
