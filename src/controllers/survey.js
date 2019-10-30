@@ -105,7 +105,13 @@ module.exports = (app, db) => {
   })
   app.get('/survey/all', async (req, res) => {
     res.json(await db.Survey.findAll({
-      include: [db.UserGroup]
+      include: {
+        model: db.UserGroup,
+        include: {
+          model: db.User,
+          attributes: ['email']
+        }
+      }
     }))
   })
   app.get('/survey/:id', (req, res) => {
