@@ -172,17 +172,62 @@ module.exports = (app, db) => {
       }
     }
   })
-  app.get('/auth/survey/:id', checkToken, (req, res) => {
-    db.Survey.findByPk(req.params.id, {
-      include: [db.Question]
-    }).then((result) => {
+  app.get('/auth/survey/:id', checkToken, async (req, res) => {
+
+    try {
+
+      const Survey = await db.Survey.findByPk(req.params.id, {
+        include: [db.Question]
+      })
+
+      if (!Survey) throw new Error("404")
+
+      const Group = await db.UserGroup.findOne({
+        where: {
+          SurveySurveyId: req.params.id
+        }
+      })
+
+      const User = await db.User.findOne({
+        where: {
+          email: res.locals.decoded.email
+        }
+      })
+
+      if (!Group.hasUser(User)) throw new Error("401")
+
+      if (!User) throw new Error("401")
+
       const currentTime = Date.now()
-      if (!result.archived && result.active && ((result.startDate === null) || (result.startDate.getTime() < currentTime)) && ((result.endDate === null) || (currentTime < result.endDate.getTime()))){
-        return res.json(result)
-      }  else {
-        return res.send("survey not active")
+
+      if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) throw new Error("Start")
+      if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) throw new Error("End")
+      if (!Survey.active || Survey.archived) throw new Error("403")
+
+      res.status(200).json(Survey)
+
+    } catch(err) {
+      console.log(err)
+      switch(err.message) {
+        case "401": 
+          res.sendStatus(401)
+          break
+        case "403":
+          res.sendStatus(403)
+          break
+        case "404":
+          res.sendStatus(404)
+          break
+        case "Start":
+          res.status(403).send("Survey has not started yet")
+          break
+        case "End":
+          res.status(403).send("Survey has ended")
+          break
+        default:
+          res.sendStatus(500)
       }
-    }).catch(err => console.log(err))
+    }
   })
   app.post('/survey/update', async (req, res) => {
     
