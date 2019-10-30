@@ -2,6 +2,7 @@
 const uuidv4 = require('uuid/v4')
 const sendMail = require('../mail')
 const crypto = require('crypto')
+const checkToken = require('../jwt')
 // const router = express.Router()
 
 module.exports = (app, db) => {
@@ -55,7 +56,6 @@ module.exports = (app, db) => {
           db.User.findOne({ where: {email: to}})
           .then(async obj => {
             if (obj) {
-              obj.addSurvey(Survey)
               group.addUser(obj)
               sendMail(to, 'Uusi kysely',
               `Täytä kysely http://localhost:8080/auth/questionnaire/${Survey.surveyId}/${obj.userId}`)
@@ -64,7 +64,6 @@ module.exports = (app, db) => {
                 userId: uuidv4(),
                 email: to
               })
-              user.addSurvey(Survey)
               group.addUser(user)
               sendMail(to, 'Uusi kysely',
               `Täytä kysely http://localhost:8080/auth/questionnaire/${Survey.surveyId}/${user.userId}`)
@@ -114,7 +113,66 @@ module.exports = (app, db) => {
       }
     }))
   })
-  app.get('/survey/:id', (req, res) => {
+  app.get('/anon/survey/:id', async (req, res) => {
+
+    try {
+
+      if (!req.headers['authorization']) throw new Error("401")
+      const entry_hash = req.headers['authorization'].substring(7)
+
+      const Survey = await db.Survey.findByPk(req.params.id, {
+        include: [db.Question]
+      })
+
+      if (!Survey) throw new Error("404")
+
+      const Group = await db.UserGroup.findOne({
+        where: {
+          SurveySurveyId: req.params.id
+        }
+      })
+
+      const AnonUser = await db.AnonUser.findOne({
+        where: {
+          entry_hash: entry_hash,
+          UserGroupId: Group.id
+        }
+      })
+
+      if (!AnonUser) throw new Error("401")
+
+      const currentTime = Date.now()
+
+      if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) throw new Error("Start")
+      if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) throw new Error("End")
+      if (!Survey.active || Survey.archived) throw new Error("403")
+
+      res.status(200).json(Survey)
+
+    } catch(err) {
+      console.log(err)
+      switch(err.message) {
+        case "401": 
+          res.sendStatus(401)
+          break
+        case "403":
+          res.sendStatus(403)
+          break
+        case "404":
+          res.sendStatus(404)
+          break
+        case "Start":
+          res.status(403).send("Survey has not started yet")
+          break
+        case "End":
+          res.status(403).send("Survey has ended")
+          break
+        default:
+          res.sendStatus(500)
+      }
+    }
+  })
+  app.get('/auth/survey/:id', checkToken, (req, res) => {
     db.Survey.findByPk(req.params.id, {
       include: [db.Question]
     }).then((result) => {
@@ -242,7 +300,7 @@ module.exports = (app, db) => {
     }).then(([,[survey]]) => survey ? res.send("Survey state changed succesfully") : res.send("No survey found")).catch(err => res.json({ err: err }))
   })
   app.post('/survey/delete', (req, res) => {
-    //TODO: make it delete all answers and questions
+    //TODO: make it delete all answers and questions (usergroups?)
     db.Survey.destroy({
       where: {
         surveyId: req.body.id

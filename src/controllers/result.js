@@ -6,10 +6,10 @@ module.exports = (app, db) => {
 
   /* get anon users survey result */
 
-  app.get('/anon/result/:id', (req, res) => {
+  app.get('/anon/result/:id/:anonId', (req, res) => {
     db.AnonUser.findOne({
       where: {
-        entry_hash: req.params.id
+        entry_hash: req.params.anonId
       },
       attributes: ['id']
     }).then(async anonUser => {
@@ -42,10 +42,10 @@ module.exports = (app, db) => {
 
   /* get auth users survey result */
 
-  app.get('/auth/result/:id', (req, res) => {
+  app.get('/auth/result/:id', checkToken, (req, res) => {
     db.User.findOne({
       where: {
-        userId: req.body.anonId
+        email: res.locals.decoded.email
       },
       attributes: ['id']
     }).then(async user => {
@@ -197,6 +197,18 @@ module.exports = (app, db) => {
         rejectOnEmpty: true,
         transaction
       })
+
+      const alreadyAnswered = await db.Answer.findOne({
+        where: {
+          SurveySurveyId: survey.surveyId,
+          AnonUserId: anonuser.id
+        },
+        lock: true,
+        transaction
+      })
+
+      if (alreadyAnswered) throw new Error("Survey has already been answered by this user")
+
       await survey.increment('responses', {transaction})
       
       const currentTime = Date.now()
