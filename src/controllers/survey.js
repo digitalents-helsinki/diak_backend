@@ -121,6 +121,7 @@ module.exports = (app, db) => {
   app.post('/survey/update', async (req, res) => {
     
     let transaction
+    const sendMails = []
 
     try {
       transaction = await db.sequelize.transaction();
@@ -131,54 +132,93 @@ module.exports = (app, db) => {
         transaction
       })
 
+      const Group = await db.UserGroup.findOne({
+        where: {
+          SurveySurveyId: Survey.surveyId
+        },
+        lock: true,
+        rejectOnEmpty: true,
+        transaction
+      })
+
+      const emails = [...new Set(req.body.to)]
+      const anonEmails = emails.filter(email => !Group.respondents.includes(email))
+
       await Survey.update({
         name: req.body.name,
         endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59) : null,
-        respondents_size: Survey.respondents_size + req.body.to.length
+        respondents_size: Survey.anon ? anonEmails.length + Survey.respondents_size : emails.length
       }, {transaction})
 
-      if (req.body.to.length) {
-        const group = await db.UserGroup.findOne({
-          where: {
-            SurveySurveyId: Survey.surveyId
-          },
+      if (Survey.anon) {
+        await Group.update({respondents: [...Group.respondents, ...anonEmails]}, {transaction})
+        for (const to of anonEmails) {
+          const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
+          let anonuser = await db.AnonUser.create({
+            id: uuidv4(),
+            entry_hash: hash
+          }, {transaction})
+          await Group.addAnonUser(anonuser, {transaction})
+          sendMails.push([to, 'Uusi kysely', 
+          `Täytä anonyymi kysely http://localhost:8080/questionnaire/${Survey.surveyId}/${hash}
+          <br><br>
+          ${Survey.message}
+          `])
+        }
+      } else {
+        const Users = await Group.getUsers({
           lock: true,
-          rejectOnEmpty: true,
           transaction
         })
-
-        await group.update({
-          respondents: [...group.respondents, ...req.body.to]
-        }, {transaction})
-
-        for (const to of req.body.to) {
-          if (Survey.anon) {
-            const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
-            let anonuser = await db.AnonUser.create({
-              id: uuidv4(),
-              entry_hash: hash
-            }, {transaction})
-            await group.addAnonUser(anonuser, {transaction})
-            sendMail(to, 'Uusi kysely', 
-            `Täytä anonyymi kysely http://localhost:8080/questionnaire/${Survey.surveyId}/${hash}
-            <br><br>
-            ${Survey.message}
-            `)
-          } else {
-            //
+        const addedRespondents = emails.filter(email => !Users.some(user => user.email === email))
+        const removedRespondents = Users.filter(user => !emails.includes(user.email))
+        for (const to of addedRespondents) {
+          const [User] = await db.User.findOrCreate({
+            where: {
+              email: to
+            },
+            defaults: {
+              userId: uuidv4(),
+              email: to
+            },
+            lock: true,
+            transaction
+          })
+          await Group.addUser(User, {transaction})
+          sendMails.push([to, 'Uusi kysely',
+          `Täytä kysely http://localhost:8080/questionnaire/${Survey.surveyId}`])
+        }
+        for (const User of removedRespondents) {
+          await Group.removeUser(User, {transaction})
+          const rows = await db.Answer.destroy({
+            where: {
+              SurveySurveyId: Survey.surveyId,
+              UserUserId: User.userId
+            },
+            force: true,
+            transaction
+          })
+          if (rows) {
+            await Survey.decrement('responses', {transaction})
           }
         }
       }
-
-      transaction.commit()
+      
+      await transaction.commit()
 
     } catch(err) {
       await transaction.rollback()
       console.log(err)
     } finally {
       if (transaction.finished === 'commit') {
+        sendMails.forEach(params => sendMail(...params))
         res.json(await db.Survey.findByPk(req.body.surveyId, {
-          include: [db.UserGroup]
+          include: {
+            model: db.UserGroup,
+            include: {
+              model: db.User
+            }
+          }
         }))
       } else res.send('Survey update failed')
     }
