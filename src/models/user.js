@@ -11,7 +11,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT
     },
     email: {
-      type: DataTypes.TEXT
+      type: DataTypes.TEXT,
+      unique: true
     },
     password: {
       type: DataTypes.TEXT
@@ -35,8 +36,8 @@ module.exports = (sequelize, DataTypes) => {
 
   User.associate = models => {
     User.hasMany(models.SurveyResult)
-    User.hasMany(models.Survey, {
-      constraints: false
+    User.belongsToMany(models.UserGroup, {
+      through: 'UserGroup_User'
     })
   }
 

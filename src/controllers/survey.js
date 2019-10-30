@@ -34,8 +34,10 @@ module.exports = (app, db) => {
     ).then(async Survey => {
       // survey.setAdmin(req.body.adminId)
       let group = await db.UserGroup.create({
-        id: uuidv4()
+        id: uuidv4(),
+        respondents: req.body.anon ? req.body.to : []
       })
+      group.setSurvey(Survey)
       req.body.to.map(async to => {
         if (req.body.anon === true) {
           const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
@@ -47,12 +49,12 @@ module.exports = (app, db) => {
           sendMail(to, 'Uusi kysely', 
           `Täytä anonyymi kysely http://localhost:8080/anon/questionnaire/${Survey.surveyId}/${hash}
           <br><br>
-          ${req.body.message}
+          ${Survey.message}
           `)
         } else {
           db.User.findOne({ where: {email: to}})
           .then(async obj => {
-            if(obj) {
+            if (obj) {
               obj.addSurvey(Survey)
               group.addUser(obj)
               sendMail(to, 'Uusi kysely',
@@ -234,6 +236,7 @@ module.exports = (app, db) => {
     }).then(([,[survey]]) => survey ? res.send("Survey state changed succesfully") : res.send("No survey found")).catch(err => res.json({ err: err }))
   })
   app.post('/survey/delete', (req, res) => {
+    //TODO: make it delete all answers and questions
     db.Survey.destroy({
       where: {
         surveyId: req.body.id
