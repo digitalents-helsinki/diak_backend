@@ -6,10 +6,10 @@ module.exports = (app, db) => {
 
   /* get anon users survey result */
 
-  app.get('/anon/result/:id/:anonId', (req, res) => {
+  app.get('/anon/result/:id/:entry_hash', (req, res) => {
     db.AnonUser.findOne({
       where: {
-        entry_hash: req.params.anonId
+        entry_hash: req.params.entry_hash
       },
       attributes: ['id']
     }).then(async anonUser => {

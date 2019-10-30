@@ -113,13 +113,9 @@ module.exports = (app, db) => {
       }
     }))
   })
-  app.get('/anon/survey/:id', async (req, res) => {
+  app.get('/anon/survey/:id/:entry_hash', async (req, res) => {
 
     try {
-
-      if (!req.headers['authorization']) throw new Error("401")
-      const entry_hash = req.headers['authorization'].substring(7)
-
       const Survey = await db.Survey.findByPk(req.params.id, {
         include: [db.Question]
       })
@@ -134,12 +130,21 @@ module.exports = (app, db) => {
 
       const AnonUser = await db.AnonUser.findOne({
         where: {
-          entry_hash: entry_hash,
+          entry_hash: req.params.entry_hash,
           UserGroupId: Group.id
         }
       })
 
       if (!AnonUser) throw new Error("401")
+
+      const alreadyAnswered = await db.Answer.findOne({
+        where: {
+          SurveySurveyId: req.params.id,
+          AnonUserId: AnonUser.id
+        }
+      })
+
+      if (alreadyAnswered) throw new Error("Already")
 
       const currentTime = Date.now()
 
@@ -160,6 +165,9 @@ module.exports = (app, db) => {
           break
         case "404":
           res.sendStatus(404)
+          break
+        case "Already":
+          res.redirect(303, `/anon/result/${req.params.id}/${req.params.entry_hash}`)
           break
         case "Start":
           res.status(403).send("Survey has not started yet")
