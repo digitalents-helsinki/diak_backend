@@ -1,6 +1,7 @@
 const uuidv4 = require('uuid/v4')
 const sendMail = require('../mail')
 const checkToken = require('../jwt')
+const wrapAsync = require('../wrapAsync')
 
 module.exports = (app, db) => {
 
@@ -97,7 +98,7 @@ module.exports = (app, db) => {
 
   /* create auth users survey result */
 
-  app.post("/auth/result/create", checkToken, async (req, res) => {
+  app.post("/auth/result/create", checkToken, wrapAsync(async (req, res) => {
 
     let transaction;
 
@@ -164,17 +165,14 @@ module.exports = (app, db) => {
 
     } catch (err) {
       await transaction.rollback()
-      console.log(err)
-    } finally {
-      if (transaction.finished === 'commit') res.json({status: "ok"})
-      else res.json({status: "not ok"})
-    }
-
-  })
+      throw err
+    } 
+    if (transaction.finished === 'commit') res.json({status: "ok"})
+  }))
 
     /* create anon users survey result */
 
-  app.post("/anon/result/create", async (req, res) => {
+  app.post("/anon/result/create", wrapAsync(async (req, res) => {
 
     let transaction;
 
@@ -232,14 +230,12 @@ module.exports = (app, db) => {
 
     } catch (err) {
       await transaction.rollback()
-      console.log(err)
-    } finally {
-      if (transaction.finished === 'commit') res.json({status: "ok"})
-      else res.json({status: "not ok"})
+      throw err
     }
+    if (transaction.finished === 'commit') res.json({status: "ok"})
 
-  })
-  app.post("/auth/emailresult", checkToken, async (req, res) => {
+  }))
+  app.post("/auth/emailresult", checkToken, wrapAsync(async (req, res) => {
     
     const User = await db.User.findOne({
       where: {
@@ -309,8 +305,8 @@ module.exports = (app, db) => {
       `)
     
     res.send("Email sent")
-  })
-  app.post("/anon/emailresult", async (req, res) => {
+  }))
+  app.post("/anon/emailresult", wrapAsync(async (req, res) => {
 
     const AnonUser = await db.AnonUser.findOne({
       where: {
@@ -381,11 +377,11 @@ module.exports = (app, db) => {
       `)
     
     res.send("Email sent")
-  })
+  }))
 
   /* create test surveys result */
 
-  app.post("/testresult/create", async (req, res) => {
+  app.post("/testresult/create", wrapAsync(async (req, res) => {
     let testikysely = await db.Survey.findOne({
       where: {
         name: "testikysely"
@@ -408,5 +404,5 @@ module.exports = (app, db) => {
       })
       return res.json({status: 'ok'})
     }).catch(err => console.log(err))
-  })
+  }))
 }

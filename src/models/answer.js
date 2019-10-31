@@ -8,7 +8,8 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true
     },
     final: {
-      type: DataTypes.BOOLEAN
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
     },
     value: {
       type: DataTypes.INTEGER

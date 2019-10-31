@@ -2,9 +2,10 @@ const uuidv4 = require('uuid/v4')
 const jwt = require('jsonwebtoken')
 const argon2 = require('argon2')
 const { randomBytes } = require('crypto')
+const wrapAsync = require('../wrapAsync')
 
 module.exports = (app, db) => {
-  app.post('/signup', async (req, res) => {
+  app.post('/signup', wrapAsync(async (req, res) => {
     const salt = randomBytes(32)
     const hashedPassword = await argon2.hash(req.body.password, { salt })
     db.User.findOne({ where: {email: req.body.email }})
@@ -27,9 +28,9 @@ module.exports = (app, db) => {
     })
     .catch(err => console.log(err))
     res.json({ success: 'true' })
-  })
+  }))
 
-  app.post('/signin', async (req, res) => {
+  app.post('/signin', wrapAsync(async (req, res) => {
     const userRecord = await db.User.findOne({ 
       where: {
         email: req.body.email 
@@ -45,7 +46,7 @@ module.exports = (app, db) => {
     } else {
       throw new Error('Invalid password')
     }
-  })
+  }))
   app.post('/logout', (req, res) => {
 
   })

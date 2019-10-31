@@ -3,6 +3,8 @@ const uuidv4 = require('uuid/v4')
 const sendMail = require('../mail')
 const crypto = require('crypto')
 const checkToken = require('../jwt')
+const wrapAsync = require('../wrapAsync')
+const StatusError = require('../statusError')
 // const router = express.Router()
 
 module.exports = (app, db) => {
@@ -78,7 +80,7 @@ module.exports = (app, db) => {
     .catch(err => console.log(err))
     res.json({ success: true })
   })
-  app.post('/testsurvey/', async (req, res) => {
+  app.post('/testsurvey/', wrapAsync(async (req, res) => {
     db.Survey.findOrCreate({
       where: {
         name: "testikysely"
@@ -101,8 +103,8 @@ module.exports = (app, db) => {
     }).then(async ([testSurvey]) => {
       return res.send(testSurvey.surveyId)
     }).catch(err => console.log(err))
-  })
-  app.get('/survey/all', async (req, res) => {
+  }))
+  app.get('/survey/all', wrapAsync(async (req, res) => {
     res.json(await db.Survey.findAll({
       include: {
         model: db.UserGroup,
@@ -112,132 +114,89 @@ module.exports = (app, db) => {
         }
       }
     }))
-  })
-  app.get('/anon/survey/:id/:entry_hash', async (req, res) => {
+  }))
+  app.get('/anon/survey/:id/:entry_hash', wrapAsync(async (req, res) => {
+    const Survey = await db.Survey.findByPk(req.params.id, {
+      include: [db.Question]
+    })
 
-    try {
-      const Survey = await db.Survey.findByPk(req.params.id, {
-        include: [db.Question]
-      })
+    if (!Survey) throw new StatusError("Survey does not exist", 400)
 
-      if (!Survey) throw new Error("404")
-
-      const Group = await db.UserGroup.findOne({
-        where: {
-          SurveySurveyId: req.params.id
-        }
-      })
-
-      const AnonUser = await db.AnonUser.findOne({
-        where: {
-          entry_hash: req.params.entry_hash,
-          UserGroupId: Group.id
-        }
-      })
-
-      if (!AnonUser) throw new Error("401")
-
-      const alreadyAnswered = await db.Answer.findOne({
-        where: {
-          SurveySurveyId: req.params.id,
-          AnonUserId: AnonUser.id
-        }
-      })
-
-      if (alreadyAnswered) throw new Error("Already")
-
-      const currentTime = Date.now()
-
-      if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) throw new Error("Start")
-      if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) throw new Error("End")
-      if (!Survey.active || Survey.archived) throw new Error("403")
-
-      res.status(200).json(Survey)
-
-    } catch(err) {
-      console.log(err)
-      switch(err.message) {
-        case "401": 
-          res.sendStatus(401)
-          break
-        case "403":
-          res.sendStatus(403)
-          break
-        case "404":
-          res.sendStatus(404)
-          break
-        case "Already":
-          res.redirect(303, `/anon/result/${req.params.id}/${req.params.entry_hash}`)
-          break
-        case "Start":
-          res.status(403).send("Survey has not started yet")
-          break
-        case "End":
-          res.status(403).send("Survey has ended")
-          break
-        default:
-          res.sendStatus(500)
+    const Group = await db.UserGroup.findOne({
+      where: {
+        SurveySurveyId: req.params.id
       }
-    }
-  })
-  app.get('/auth/survey/:id', checkToken, async (req, res) => {
+    })
 
-    try {
-
-      const Survey = await db.Survey.findByPk(req.params.id, {
-        include: [db.Question]
-      })
-
-      if (!Survey) throw new Error("404")
-
-      const Group = await db.UserGroup.findOne({
-        where: {
-          SurveySurveyId: req.params.id
-        }
-      })
-
-      const User = await db.User.findOne({
-        where: {
-          email: res.locals.decoded.email
-        }
-      })
-
-      if (!Group.hasUser(User)) throw new Error("401")
-
-      if (!User) throw new Error("401")
-
-      const currentTime = Date.now()
-
-      if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) throw new Error("Start")
-      if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) throw new Error("End")
-      if (!Survey.active || Survey.archived) throw new Error("403")
-
-      res.status(200).json(Survey)
-
-    } catch(err) {
-      console.log(err)
-      switch(err.message) {
-        case "401": 
-          res.sendStatus(401)
-          break
-        case "403":
-          res.sendStatus(403)
-          break
-        case "404":
-          res.sendStatus(404)
-          break
-        case "Start":
-          res.status(403).send("Survey has not started yet")
-          break
-        case "End":
-          res.status(403).send("Survey has ended")
-          break
-        default:
-          res.sendStatus(500)
+    const AnonUser = await db.AnonUser.findOne({
+      where: {
+        entry_hash: req.params.entry_hash,
+        UserGroupId: Group.id
       }
-    }
-  })
-  app.post('/survey/update', async (req, res) => {
+    })
+
+    if (!AnonUser) throw new StatusError("User does not exist or does not have access to the survey", 401)
+
+    const alreadyAnswered = await db.Answer.findOne({
+      where: {
+        final: true,
+        SurveySurveyId: req.params.id,
+        AnonUserId: AnonUser.id
+      }
+    })
+
+    if (alreadyAnswered) throw new StatusError("User has already answered the survey", 403)
+
+    const currentTime = Date.now()
+
+    if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) throw new StatusError("Survey hasn't started", 403)
+    if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) throw new StatusError("Survey has ended", 403)
+    if (!Survey.active || Survey.archived) throw new StatusError("Survey is not active", 403)
+
+    res.status(200).json(Survey)
+  }))
+  app.get('/auth/survey/:id', checkToken, wrapAsync(async (req, res) => {
+    const Survey = await db.Survey.findByPk(req.params.id, {
+      include: [db.Question]
+    })
+
+    if (!Survey) throw new StatusError("Survey does not exist", 400)
+
+    const Group = await db.UserGroup.findOne({
+      where: {
+        SurveySurveyId: req.params.id
+      }
+    })
+
+    const User = await db.User.findOne({
+      where: {
+        email: res.locals.decoded.email
+      }
+    })
+
+    if (!User) throw new StatusError("User does not exist", 401)
+
+    if (!Group.hasUser(User)) throw new StatusError("User does not have access to the survey", 401)
+
+    const alreadyAnswered = await db.Answer.findOne({
+      where: {
+        final: true,
+        SurveySurveyId: req.params.id,
+        UserUserId: User.userId
+      }
+    })
+
+    if (alreadyAnswered) throw new StatusError("User has already answered the survey", 403)
+
+    const currentTime = Date.now()
+
+    if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) throw new StatusError("Survey hasn't started", 403)
+    if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) throw new StatusError("Survey has ended", 403)
+    if (!Survey.active || Survey.archived) throw new StatusError("Survey is not active", 403)
+
+    res.status(200).json(Survey)
+  }))
+  app.post('/survey/update', wrapAsync(async (req, res) => {
     
     let transaction
     const sendMails = []
@@ -327,21 +286,20 @@ module.exports = (app, db) => {
 
     } catch(err) {
       await transaction.rollback()
-      console.log(err)
-    } finally {
-      if (transaction.finished === 'commit') {
-        sendMails.forEach(params => sendMail(...params))
-        res.json(await db.Survey.findByPk(req.body.surveyId, {
-          include: {
-            model: db.UserGroup,
-            include: {
-              model: db.User
-            }
-          }
-        }))
-      } else res.send('Survey update failed')
+      throw err
     }
-  })
+    if (transaction.finished === 'commit') {
+      sendMails.forEach(params => sendMail(...params))
+      res.json(await db.Survey.findByPk(req.body.surveyId, {
+        include: {
+          model: db.UserGroup,
+          include: {
+            model: db.User
+          }
+        }
+      }))
+    }
+  }))
   app.post('/survey/suspendactivate', (req, res) => {
     db.Survey.update({
         active: req.body.active
