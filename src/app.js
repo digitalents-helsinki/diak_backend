@@ -4,6 +4,10 @@ const cors = require('cors')
 const config = require('dotenv')
 config.config()
 
+const appInsights = require("applicationinsights");
+appInsights.setup("1a7c342d-11ba-4343-aa2e-cb48bf7175d0");
+appInsights.start();
+
 const db = require('./models')
 const apiAnonUser = require('./controllers/anonuser')
 const apiResult = require('./controllers/result')
