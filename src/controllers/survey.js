@@ -153,7 +153,15 @@ module.exports = (app, db) => {
     if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
     if (!Survey.active || Survey.archived) return next(new StatusError("Survey is not active", 403))
 
-    return res.status(200).json(Survey)
+    const savedAnswers = await db.Answer.findAll({
+      where: {
+        SurveySurveyId: Survey.surveyId,
+        AnonUserId: AnonUser.id,
+        final: false
+      }
+    })
+
+    return res.status(200).json({Survey, savedAnswers})
   }))
   app.get('/auth/survey/:id', checkToken, wrapAsync(async (req, res, next) => {
     const Survey = await db.Survey.findByPk(req.params.id, {
@@ -186,8 +194,7 @@ module.exports = (app, db) => {
       }
     })
 
-    if (alreadyAnswered) return res.redirect(303, `/auth/result/${req.params.id}`)
-    //next(new StatusError("User has already answered the survey", 403))
+    if (alreadyAnswered) return next(new StatusError("User has already answered the survey", 403))
 
     const currentTime = Date.now()
 
@@ -195,7 +202,15 @@ module.exports = (app, db) => {
     if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
     if (!Survey.active || Survey.archived) return next(new StatusError("Survey is not active", 403))
 
-    return res.status(200).json(Survey)
+    const savedAnswers = await db.Answer.findAll({
+      where: {
+        SurveySurveyId: Survey.surveyId,
+        UserUserId: User.userId,
+        final: false
+      }
+    })
+
+    return res.status(200).json({Survey, savedAnswers})
   }))
   app.post('/survey/update', wrapAsync(async (req, res) => {
     
@@ -265,7 +280,7 @@ module.exports = (app, db) => {
           })
           await Group.addUser(User, {transaction})
           sendMails.push([to, 'Uusi kysely',
-          `Täytä kysely http://localhost:8080/auth/questionnaire/${Survey.surveyId}`])
+          `Täytä kysely http://localhost:8080/auth/questionnaire/${Survey.surveyId}/${User.userId}`])
         }
         for (const User of removedRespondents) {
           await Group.removeUser(User, {transaction})

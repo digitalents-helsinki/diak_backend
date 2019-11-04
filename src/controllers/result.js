@@ -93,6 +93,9 @@ module.exports = (app, db) => {
       attributes: ['questionId', 'name', 'number', 'title', [db.sequelize.fn('AVG', db.sequelize.col('Answers.value')), 'answerAvg']],
       include: {
         model: db.Answer,
+        where: {
+          final: true
+        },
         attributes: []
       },
       group: ['Question.questionId']
@@ -115,6 +118,10 @@ module.exports = (app, db) => {
         },
         include: [{
           model: db.Answer,
+          where: {
+            final: true
+          },
+          required: false,
           attributes: {
             exclude: ['createdAt', 'updatedAt']
           }
@@ -160,6 +167,7 @@ module.exports = (app, db) => {
 
       const alreadyAnswered = await db.Answer.findOne({
         where: {
+          final: true,
           SurveySurveyId: Survey.surveyId,
           UserUserId: User.userId
         },
@@ -167,25 +175,46 @@ module.exports = (app, db) => {
         transaction
       })
 
-      if (alreadyAnswered) throw new Error("Survey has already been answered by this user")
+      if (alreadyAnswered) throw new StatusError("User has already answered the survey", 403)
 
       await Survey.increment('responses', {transaction})
       
       const currentTime = Date.now()
-      if (Survey.archived || !Survey.active || ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) || ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime))) throw new Error("Survey not active")
+
+      if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) throw new StatusError("Survey hasn't started", 403)
+      if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) throw new StatusError("Survey has ended", 403)
+      if (!Survey.active || Survey.archived) throw new StatusError("Survey is not active", 403)
+  
 
       for (const answer of req.body.answers) {
-        if (answer.description && answer.description.length > 2000) throw new Error("Answer is too long")
-        const createdAnswer = await db.Answer.create({
-          answerId: uuidv4(),
-          value: answer.val,
-          description: answer.desc
-        }, {transaction})
-        await Promise.all([
-          createdAnswer.setSurvey(Survey, {transaction}),
-          createdAnswer.setQuestion(answer.id, {transaction}),
-          createdAnswer.setUser(User, {transaction})
-        ])
+        if (answer.description && answer.description.length > 2000) throw new StatusError("Answer is too long", 400)
+        const [savedAnswer, created] = await db.Answer.findOrCreate({
+          where: {
+            SurveySurveyId: Survey.surveyId,
+            UserUserId: User.userId,
+            QuestionQuestionId: answer.id
+          },
+          defaults: {
+            answerId: uuidv4(),
+            value: answer.val,
+            description: answer.desc
+          },
+          lock: true,
+          transaction
+        })
+        if (created) {
+          await Promise.all([
+            savedAnswer.setSurvey(Survey, {transaction}),
+            savedAnswer.setQuestion(answer.id, {transaction}),
+            savedAnswer.setUser(User, {transaction})
+          ])
+        } else {
+          await savedAnswer.update({
+            value: answer.val,
+            description: answer.desc,
+            final: true
+          }, {transaction})
+        }
       }
 
       await transaction.commit()
@@ -225,6 +254,7 @@ module.exports = (app, db) => {
 
       const alreadyAnswered = await db.Answer.findOne({
         where: {
+          final: true,
           SurveySurveyId: survey.surveyId,
           AnonUserId: anonuser.id
         },
@@ -232,25 +262,45 @@ module.exports = (app, db) => {
         transaction
       })
 
-      if (alreadyAnswered) throw new Error("Survey has already been answered by this user")
+      if (alreadyAnswered) throw new StatusError("User has already answered the survey", 403)
 
       await survey.increment('responses', {transaction})
       
       const currentTime = Date.now()
-      if (survey.archived || !survey.active || ((survey.startDate !== null) && (currentTime < survey.startDate.getTime())) || ((survey.endDate !== null) && (survey.endDate.getTime() < currentTime))) throw new Error("Survey not active")
+
+      if ((survey.startDate !== null) && (currentTime < survey.startDate.getTime())) throw new StatusError("Survey hasn't started", 403)
+      if ((survey.endDate !== null) && (survey.endDate.getTime() < currentTime)) throw new StatusError("Survey has ended", 403)
+      if (!survey.active || survey.archived) throw new StatusError("Survey is not active", 403)
 
       for (const answer of req.body.answers) {
-        if (answer.description && answer.description.length > 2000) throw new Error("Answer is too long")
-        const createdAnswer = await db.Answer.create({
-          answerId: uuidv4(),
-          value: answer.val,
-          description: answer.desc
-        }, {transaction})
-        await Promise.all([
-          createdAnswer.setSurvey(req.body.surveyId, {transaction}),
-          createdAnswer.setQuestion(answer.id, {transaction}),
-          createdAnswer.setAnonUser(anonuser, {transaction})
-        ])
+        if (answer.description && answer.description.length > 2000) throw new StatusError("Answer is too long", 400)
+        const [savedAnswer, created] = await db.Answer.findOrCreate({
+          where: {
+            SurveySurveyId: survey.surveyId,
+            AnonUserId: anonuser.id,
+            QuestionQuestionId: answer.id
+          },
+          defaults: {
+            answerId: uuidv4(),
+            value: answer.val,
+            description: answer.desc
+          },
+          lock: true,
+          transaction
+        })
+        if (created) {
+          await Promise.all([
+            savedAnswer.setSurvey(req.body.surveyId, {transaction}),
+            savedAnswer.setQuestion(answer.id, {transaction}),
+            savedAnswer.setAnonUser(anonuser, {transaction})
+          ])
+        } else {
+          await savedAnswer.update({
+            value: answer.val,
+            description: answer.desc,
+            final: true
+          }, {transaction})
+        }
       }
 
       await transaction.commit()
@@ -262,6 +312,179 @@ module.exports = (app, db) => {
     if (transaction.finished === 'commit') res.json({status: "ok"})
 
   }))
+
+  app.post('/auth/result/save', checkToken, wrapAsync(async (req, res, next) => {
+    let transaction;
+
+    try {
+      transaction = await db.sequelize.transaction();
+
+      const Survey = await db.Survey.findByPk(req.body.surveyId, {
+        attributes: ["surveyId", "active", "startDate", "endDate"],
+        lock: true,
+        rejectOnEmpty: true,
+        transaction
+      })
+
+      const Group = await db.UserGroup.findOne({
+        where: {
+          SurveySurveyId: Survey.surveyId,
+        },
+        lock: true,
+        rejectOnEmpty: true,
+        transaction
+      })
+
+      const [User] = await Group.getUsers({
+        where: {
+          email: res.locals.decoded.email
+        },
+        attributes: ["userId"],
+        lock: true,
+        rejectOnEmpty: true,
+        transaction
+      })
+
+      const alreadyAnswered = await db.Answer.findOne({
+        where: {
+          final: true,
+          SurveySurveyId: Survey.surveyId,
+          UserUserId: User.userId
+        },
+        lock: true,
+        transaction
+      })
+
+      if (alreadyAnswered) throw new StatusError("User has already answered the survey", 403)
+      
+      const currentTime = Date.now()
+
+      if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) throw new StatusError("Survey hasn't started", 403)
+      if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) throw new StatusError("Survey has ended", 403)
+      if (!Survey.active || Survey.archived) throw new StatusError("Survey is not active", 403)
+  
+
+      for (const answer of req.body.answers) {
+        if (answer.description && answer.description.length > 2000) throw new StatusError("Answer is too long", 400)
+        const [savedAnswer, created] = await db.Answer.findOrCreate({
+          where: {
+            SurveySurveyId: Survey.surveyId,
+            UserUserId: User.userId,
+            QuestionQuestionId: answer.id
+          },
+          defaults: {
+            answerId: uuidv4(),
+            value: answer.val,
+            description: answer.desc,
+            final: false
+          },
+          lock: true,
+          transaction
+        })
+        if (created) {
+          await Promise.all([
+            savedAnswer.setSurvey(Survey, {transaction}),
+            savedAnswer.setQuestion(answer.id, {transaction}),
+            savedAnswer.setUser(User, {transaction})
+          ])
+        } else {
+          await savedAnswer.update({
+            value: answer.val,
+            description: answer.desc
+          }, {transaction})
+        }
+      }
+
+      await transaction.commit()
+
+    } catch (err) {
+      await transaction.rollback()
+      throw err
+    } 
+    if (transaction.finished === 'commit') res.json({status: "ok"})
+  }))
+
+  app.post('/anon/result/save/', wrapAsync(async (req, res, next) => {
+    let transaction;
+
+    try {
+      transaction = await db.sequelize.transaction();
+
+      const anonuser = await db.AnonUser.findOne({
+        where: {
+          entry_hash: req.body.anonId
+        },
+        attributes: ["id"],
+        lock: true,
+        rejectOnEmpty: true,
+        transaction
+      })
+
+      const survey = await db.Survey.findByPk(req.body.surveyId, {
+        attributes: ["surveyId", "active", "startDate", "endDate"],
+        lock: true,
+        rejectOnEmpty: true,
+        transaction
+      })
+
+      const alreadyAnswered = await db.Answer.findOne({
+        where: {
+          final: true,
+          SurveySurveyId: survey.surveyId,
+          AnonUserId: anonuser.id
+        },
+        lock: true,
+        transaction
+      })
+
+      if (alreadyAnswered) throw new StatusError("User has already answered the survey", 403)
+      
+      const currentTime = Date.now()
+
+      if ((survey.startDate !== null) && (currentTime < survey.startDate.getTime())) throw new StatusError("Survey hasn't started", 403)
+      if ((survey.endDate !== null) && (survey.endDate.getTime() < currentTime)) throw new StatusError("Survey has ended", 403)
+      if (!survey.active || survey.archived) throw new StatusError("Survey is not active", 403)
+
+      for (const answer of req.body.answers) {
+        if (answer.description && answer.description.length > 2000) throw new StatusError("Answer is too long", 400)
+        const [savedAnswer, created] = await db.Answer.findOrCreate({
+          where: {
+            SurveySurveyId: survey.surveyId,
+            AnonUserId: anonuser.id,
+            QuestionQuestionId: answer.id
+          },
+          defaults: {
+            answerId: uuidv4(),
+            value: answer.val,
+            description: answer.desc,
+            final: false
+          },
+          lock: true,
+          transaction
+        })
+        if (created) {
+          await Promise.all([
+            savedAnswer.setSurvey(req.body.surveyId, {transaction}),
+            savedAnswer.setQuestion(answer.id, {transaction}),
+            savedAnswer.setAnonUser(anonuser, {transaction})
+          ])
+        } else {
+          savedAnswer.update({
+            value: answer.val,
+            description: answer.desc
+          }, {transaction})
+        }
+      }
+
+      await transaction.commit()
+
+    } catch (err) {
+      await transaction.rollback()
+      throw err
+    }
+    if (transaction.finished === 'commit') res.json({status: "ok"})
+  }))
+
   app.post("/auth/emailresult", checkToken, wrapAsync(async (req, res, next) => {
     
     const User = await db.User.findOne({
@@ -279,6 +502,7 @@ module.exports = (app, db) => {
       include: {
         model: db.Answer,
         where: {
+          final: true,
           UserUserId: User.userId
         }
       }
@@ -355,6 +579,7 @@ module.exports = (app, db) => {
       include: {
         model: db.Answer,
         where: {
+          final: true,
           AnonUserId: AnonUser.id
         }
       }
