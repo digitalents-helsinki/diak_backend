@@ -2,80 +2,107 @@ const uuidv4 = require('uuid/v4')
 const sendMail = require('../mail')
 const checkToken = require('../jwt')
 const wrapAsync = require('../wrapAsync')
+const StatusError = require('../statusError')
 
 module.exports = (app, db) => {
 
   /* get anon users survey result */
 
-  app.get('/anon/result/:id/:entry_hash', (req, res) => {
-    db.AnonUser.findOne({
+  app.get('/anon/result/:id/:entry_hash', wrapAsync(async (req, res, next) => {
+    const AnonUser = await db.AnonUser.findOne({
       where: {
         entry_hash: req.params.entry_hash
       },
       attributes: ['id']
-    }).then(async anonUser => {
-      if (anonUser) {
-        return res.json(
-          await db.Survey.findByPk(req.params.id, {
-            include: [{
-              model: db.Question,
-              attributes: {
-                exclude: ['createdAt', 'updatedAt']
-              },
-              required: true,
-              include: [{
-                model: db.Answer,
-                attributes: {
-                  exclude: ['createdAt', 'updatedAt']
-                },
-                where: {
-                  AnonUserId: anonUser.id
-                }
-              }]
-            }]
-          })
-        )
-      } else {
-        return res.send("Error")
+    })
+
+    if (!AnonUser) return next(new StatusError("User does not exist", 403))
+
+    const Result = await db.Survey.findByPk(req.params.id, {
+      attributes: ['name'],
+      include: {
+        model: db.Question,
+        attributes: ['name', 'number', 'title'],
+        required: true,
+        include: {
+          model: db.Answer,
+          attributes: ['value'],
+          where: {
+            final: true,
+            AnonUserId: AnonUser.id
+          }
+        }
       }
-    }).catch(err => console.log(err))
-  })
+    })
+
+    if (!Result) return next(new StatusError("Result does not exist", 404))
+
+    const Averages = await db.Question.findAll({
+      where: {
+        SurveySurveyId: req.params.id
+      },
+      attributes: ['questionId', 'name', 'number', 'title', [db.sequelize.fn('AVG', db.sequelize.col('Answers.value')), 'answerAvg']],
+      include: {
+        model: db.Answer,
+        attributes: []
+      },
+      group: ['Question.questionId']
+    })
+
+    return res.status(200).json({
+      Result,
+      Averages
+    })
+  }))
 
   /* get auth users survey result */
 
-  app.get('/auth/result/:id', checkToken, (req, res) => {
-    db.User.findOne({
+  app.get('/auth/result/:id', checkToken, wrapAsync(async (req, res, next) => {
+    const User = await db.User.findOne({
       where: {
         email: res.locals.decoded.email
       },
-      attributes: ['id']
-    }).then(async user => {
-      if (user) {
-        return res.json(
-          await db.Survey.findByPk(req.params.id, {
-            include: [{
-              model: db.Question,
-              attributes: {
-                exclude: ['createdAt', 'updatedAt']
-              },
-              required: true,
-              include: [{
-                model: db.Answer,
-                attributes: {
-                  exclude: ['createdAt', 'updatedAt']
-                },
-                where: {
-                  userId: user.id
-                }
-              }]
-            }]
-          })
-        )
-      } else {
-        return res.send("Error")
+      attributes: ['userId']
+    })
+
+    if (!User) return next(new StatusError("User does not exist", 403))
+
+    const Result = await db.Survey.findByPk(req.params.id, {
+      attributes: ['name'],
+      include: {
+        model: db.Question,
+        attributes: ['name', 'number', 'title'],
+        required: true,
+        include: {
+          model: db.Answer,
+          attributes: ['value'],
+          where: {
+            final: true,
+            UserUserId: User.userId
+          }
+        }
       }
-    }).catch(err => console.log(err))
-  })
+    })
+
+    if (!Result) return next(new StatusError("Result does not exist", 404))
+
+    const Averages = await db.Question.findAll({
+      where: {
+        SurveySurveyId: req.params.id
+      },
+      attributes: ['questionId', 'name', 'number', 'title', [db.sequelize.fn('AVG', db.sequelize.col('Answers.value')), 'answerAvg']],
+      include: {
+        model: db.Answer,
+        attributes: []
+      },
+      group: ['Question.questionId']
+    })
+
+    return res.json({
+      Result,
+      Averages
+    })
+  }))
 
   /* get surveys results */
 
@@ -235,13 +262,15 @@ module.exports = (app, db) => {
     if (transaction.finished === 'commit') res.json({status: "ok"})
 
   }))
-  app.post("/auth/emailresult", checkToken, wrapAsync(async (req, res) => {
+  app.post("/auth/emailresult", checkToken, wrapAsync(async (req, res, next) => {
     
     const User = await db.User.findOne({
       where: {
         email: res.locals.decoded.email
       }
     })
+
+    if (!User) return next(new StatusError("User does not exist", 401))
 
     const QuestionsAnswers = await db.Question.findAll({
       where: {
@@ -254,6 +283,8 @@ module.exports = (app, db) => {
         }
       }
     })
+
+    if (!QuestionsAnswers) return next(new StatusError("Result does not exist", 404))
 
     const defaultTitles = {
       health: 'Terveys',
@@ -304,9 +335,9 @@ module.exports = (app, db) => {
       </table>
       `)
     
-    res.send("Email sent")
+    return res.status(200).send("Email sent")
   }))
-  app.post("/anon/emailresult", wrapAsync(async (req, res) => {
+  app.post("/anon/emailresult", wrapAsync(async (req, res, next) => {
 
     const AnonUser = await db.AnonUser.findOne({
       where: {
@@ -314,6 +345,8 @@ module.exports = (app, db) => {
       },
       attributes: ["id"]
     })
+
+    if (!AnonUser) return next(new StatusError("User does not exist", 401))
 
     const QuestionsAnswers = await db.Question.findAll({
       where: {
@@ -326,6 +359,8 @@ module.exports = (app, db) => {
         }
       }
     })
+
+    if (!QuestionsAnswers) return next(new StatusError("Result does not exist", 404))
 
     const defaultTitles = {
       health: 'Terveys',
@@ -376,7 +411,7 @@ module.exports = (app, db) => {
       </table>
       `)
     
-    res.send("Email sent")
+    return res.status(200).send("Email sent")
   }))
 
   /* create test surveys result */
