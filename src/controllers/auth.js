@@ -37,6 +37,7 @@ module.exports = (app, db) => {
       }
     })
     if (!userRecord) {
+      res.json({success: false})
       throw new Error('User not registered')
     }
     const validPassword = await argon2.verify(userRecord.password, req.body.password)
@@ -44,6 +45,7 @@ module.exports = (app, db) => {
       const token = generateToken(userRecord)
       res.json({ success: true, userId: userRecord.userId, token: token, role: userRecord.role })
     } else {
+      res.json({success: false})
       throw new Error('Invalid password')
     }
   }))
