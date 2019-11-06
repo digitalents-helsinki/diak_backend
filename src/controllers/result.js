@@ -183,7 +183,8 @@ module.exports = (app, db) => {
 
       if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) throw new StatusError("Survey hasn't started", 403)
       if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) throw new StatusError("Survey has ended", 403)
-      if (!Survey.active || Survey.archived) throw new StatusError("Survey is not active", 403)
+      if (!Survey.active) throw new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403)
+      if (Survey.archived) throw new StatusError("Survey has been archived and answering is no longer possible", 403)
   
 
       for (const answer of req.body.answers) {
@@ -270,7 +271,8 @@ module.exports = (app, db) => {
 
       if ((survey.startDate !== null) && (currentTime < survey.startDate.getTime())) throw new StatusError("Survey hasn't started", 403)
       if ((survey.endDate !== null) && (survey.endDate.getTime() < currentTime)) throw new StatusError("Survey has ended", 403)
-      if (!survey.active || survey.archived) throw new StatusError("Survey is not active", 403)
+      if (!survey.active) throw new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403)
+      if (survey.archived) throw new StatusError("Survey has been archived and answering is no longer possible", 403)
 
       for (const answer of req.body.answers) {
         if (answer.description && answer.description.length > 2000) throw new StatusError("Answer is too long", 400)
@@ -361,7 +363,8 @@ module.exports = (app, db) => {
 
       if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) throw new StatusError("Survey hasn't started", 403)
       if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) throw new StatusError("Survey has ended", 403)
-      if (!Survey.active || Survey.archived) throw new StatusError("Survey is not active", 403)
+      if (!Survey.active) throw new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403)
+      if (Survey.archived) throw new StatusError("Survey has been archived and answering is no longer possible", 403)
   
 
       for (const answer of req.body.answers) {
@@ -443,7 +446,8 @@ module.exports = (app, db) => {
 
       if ((survey.startDate !== null) && (currentTime < survey.startDate.getTime())) throw new StatusError("Survey hasn't started", 403)
       if ((survey.endDate !== null) && (survey.endDate.getTime() < currentTime)) throw new StatusError("Survey has ended", 403)
-      if (!survey.active || survey.archived) throw new StatusError("Survey is not active", 403)
+      if (!survey.active) throw new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403)
+      if (survey.archived) throw new StatusError("Survey has been archived and answering is no longer possible", 403)
 
       for (const answer of req.body.answers) {
         if (answer.description && answer.description.length > 2000) throw new StatusError("Answer is too long", 400)

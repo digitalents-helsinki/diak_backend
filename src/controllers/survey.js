@@ -151,7 +151,8 @@ module.exports = (app, db) => {
 
     if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) return next(new StatusError("Survey hasn't started", 403))
     if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
-    if (!Survey.active || Survey.archived) return next(new StatusError("Survey is not active", 403))
+    if (!Survey.active) return next(new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403))
+    if (Survey.archived) return next(new StatusError("Survey has been archived and answering is no longer possible", 403))
 
     const savedAnswers = await db.Answer.findAll({
       where: {
@@ -200,7 +201,8 @@ module.exports = (app, db) => {
 
     if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) return next(new StatusError("Survey hasn't started", 403))
     if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
-    if (!Survey.active || Survey.archived) return next(new StatusError("Survey is not active", 403))
+    if (!Survey.active) return next(new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403))
+    if (Survey.archived) return next(new StatusError("Survey has been archived and answering is no longer possible", 403))
 
     const savedAnswers = await db.Answer.findAll({
       where: {
@@ -241,7 +243,8 @@ module.exports = (app, db) => {
       await Survey.update({
         name: req.body.name,
         endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59) : null,
-        respondents_size: Survey.anon ? anonEmails.length + Survey.respondents_size : emails.length
+        respondents_size: Survey.anon ? anonEmails.length + Survey.respondents_size : emails.length,
+        active: req.body.active
       }, {transaction})
 
       if (Survey.anon) {
@@ -316,16 +319,6 @@ module.exports = (app, db) => {
       }))
     }
   }))
-  app.post('/survey/suspendactivate', (req, res) => {
-    db.Survey.update({
-        active: req.body.active
-      },{
-      where: {
-        surveyId: req.body.id
-      },
-      returning: []
-    }).then(([,[survey]]) => survey ? res.send("Survey state changed succesfully") : res.send("No survey found")).catch(err => res.json({ err: err }))
-  })
   app.post('/survey/delete', (req, res) => {
     //TODO: make it delete all answers and questions (usergroups?)
     db.Survey.destroy({
