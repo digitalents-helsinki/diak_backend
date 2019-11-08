@@ -1,7 +1,11 @@
 // const express = require('express')
 const uuidv4 = require('uuid/v4')
 const sendMail = require('../mail')
+const mailUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://stupefied-joliot-1a8c88.netlify.com'
 const crypto = require('crypto')
+const checkToken = require('../jwt')
+const wrapAsync = require('../wrapAsync')
+const StatusError = require('../statusError')
 // const router = express.Router()
 
 module.exports = (app, db) => {
@@ -33,80 +37,51 @@ module.exports = (app, db) => {
     { include: [db.Question] }
     ).then(async Survey => {
       // survey.setAdmin(req.body.adminId)
-      if (req.body.anon == true) {
-        let group = await db.UserGroup.create({
-          id: uuidv4(),
-          respondents: req.body.to
-        })
-        group.setSurvey(Survey)
-        req.body.to.map(async to => {
-          if (req.body.anon === true) {
-            const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
-            let anonuser = await db.AnonUser.create({
-              id: uuidv4(),
-              entry_hash: hash
-            })
-            group.addAnonUser(anonuser)
-            sendMail(to, 'Uusi kysely', 
-            `Täytä anonyymi kysely http://localhost:8080/questionnaire/${Survey.surveyId}/${hash}
-            <br><br>
-            ${Survey.message}
-            `)
-          } else {
-            db.User.findOne({ where: {email: to}})
-            .then(async obj => {
-              if(obj) {
-                obj.addSurvey(Survey)
-                return group.addUser(obj)
-              } else {
-                let user = await db.User.create({
-                  userId: uuidv4(),
-                  email: to
-                })
-                user.addSurvey(Survey)
-                return group.addUser(user)
-              }
-            })
-            .catch(err => console.log(err))
-            /*
-            sendMail(to, 'Uusi kysely',
-            'Täytä kysely http://localhost:8080/login/')
-            */
-          }
-        })
-      } else {
-        // survey.setUsers(req.body.to)
-      }
+      let group = await db.UserGroup.create({
+        id: uuidv4(),
+        respondents: req.body.anon ? req.body.to : []
+      })
+      group.setSurvey(Survey)
+      req.body.to.map(async to => {
+        if (req.body.anon === true) {
+          const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
+          let anonuser = await db.AnonUser.create({
+            id: uuidv4(),
+            entry_hash: hash
+          })
+          group.addAnonUser(anonuser)
+          sendMail(to, 'Uusi kysely', 
+          `Täytä anonyymi kysely ${mailUrl}/anon/questionnaire/${Survey.surveyId}/${hash}
+          <br><br>
+          ${Survey.message}
+          `)
+        } else {
+          db.User.findOne({ where: {email: to}})
+          .then(async obj => {
+            if (obj) {
+              group.addUser(obj)
+              sendMail(to, 'Uusi kysely',
+              `Täytä kysely ${mailUrl}/auth/questionnaire/${Survey.surveyId}/${obj.userId}`)
+            } else {
+              let user = await db.User.create({
+                userId: uuidv4(),
+                email: to
+              })
+              group.addUser(user)
+              sendMail(to, 'Uusi kysely',
+              `Täytä kysely ${mailUrl}/auth/questionnaire/${Survey.surveyId}/${user.userId}`)
+            }
+            return true
+          })
+          .catch(err => console.log(err))
+        }
+      })
       return true
     })
     .catch(err => console.log(err))
     res.json({ success: true })
   })
-  app.post('/testsurvey/', async (req, res) => {
-    db.Survey.findOrCreate({
-      where: {
-        name: "testikysely"
-      },
-      defaults: {
-        surveyId: uuidv4(),
-        name: "testikysely",
-        anon: true,
-        archived: false,
-        active: true,
-        Questions: [{name:"health",number:1},{name:"overcoming",number:2},{name:"living",number:3},{name:"coping",number:4},{name:"family",number:5},{name:"friends",number:6},{name:"finance",number:7},{name:"strengths",number:8},{name:"self_esteem",number:9},{name:"life_as_whole",number:10}].map(question => {
-          return {
-            questionId: uuidv4(),
-            name: question.name,
-            number: question.number
-          }
-        })
-      },
-      include: [ db.Question ]
-    }).then(async ([testSurvey]) => {
-      return res.send(testSurvey.surveyId)
-    }).catch(err => console.log(err))
-  })
-  app.get('/survey/all', async (req, res) => {
+  app.get('/survey/all', wrapAsync(async (req, res) => {
     res.json(await db.Survey.findAll({
       include: {
         model: db.UserGroup,
@@ -116,20 +91,107 @@ module.exports = (app, db) => {
         }
       }
     }))
-  })
-  app.get('/survey/:id', (req, res) => {
-    db.Survey.findByPk(req.params.id, {
+  }))
+  app.get('/anon/survey/:id/:entry_hash', wrapAsync(async (req, res, next) => {
+    const Survey = await db.Survey.findByPk(req.params.id, {
       include: [db.Question]
-    }).then((result) => {
-      const currentTime = Date.now()
-      if (!result.archived && result.active && ((result.startDate === null) || (result.startDate.getTime() < currentTime)) && ((result.endDate === null) || (currentTime < result.endDate.getTime()))){
-        return res.json(result)
-      }  else {
-        return res.send("survey not active")
+    })
+
+    if (!Survey) return next(new StatusError("Survey does not exist", 400))
+
+    const Group = await db.UserGroup.findOne({
+      where: {
+        SurveySurveyId: req.params.id
       }
-    }).catch(err => console.log(err))
-  })
-  app.post('/survey/update', async (req, res) => {
+    })
+
+    const AnonUser = await db.AnonUser.findOne({
+      where: {
+        entry_hash: req.params.entry_hash,
+        UserGroupId: Group.id
+      }
+    })
+
+    if (!AnonUser) return next(new StatusError("User does not exist or does not have access to the survey", 401))
+
+    const alreadyAnswered = await db.Answer.findOne({
+      where: {
+        final: true,
+        SurveySurveyId: req.params.id,
+        AnonUserId: AnonUser.id
+      }
+    })
+
+    if (alreadyAnswered) return next(new StatusError("User has already answered the survey", 403))
+
+    const currentTime = Date.now()
+
+    if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) return next(new StatusError("Survey hasn't started", 403))
+    if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
+    if (!Survey.active) return next(new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403))
+    if (Survey.archived) return next(new StatusError("Survey has been archived and answering is no longer possible", 403))
+
+    const savedAnswers = await db.Answer.findAll({
+      where: {
+        SurveySurveyId: Survey.surveyId,
+        AnonUserId: AnonUser.id,
+        final: false
+      }
+    })
+
+    return res.status(200).json({Survey, savedAnswers})
+  }))
+  app.get('/auth/survey/:id', checkToken, wrapAsync(async (req, res, next) => {
+    const Survey = await db.Survey.findByPk(req.params.id, {
+      include: [db.Question]
+    })
+
+    if (!Survey) return next(new StatusError("Survey does not exist", 400))
+
+    const Group = await db.UserGroup.findOne({
+      where: {
+        SurveySurveyId: req.params.id
+      }
+    })
+
+    const User = await db.User.findOne({
+      where: {
+        email: res.locals.decoded.email
+      }
+    })
+
+    if (!User) return next(new StatusError("User does not exist", 401))
+
+    if (!Group.hasUser(User)) return next(new StatusError("User does not have access to the survey", 401))
+
+    const alreadyAnswered = await db.Answer.findOne({
+      where: {
+        final: true,
+        SurveySurveyId: req.params.id,
+        UserUserId: User.userId
+      }
+    })
+
+    if (alreadyAnswered) return next(new StatusError("User has already answered the survey", 403))
+
+    const currentTime = Date.now()
+
+    if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) return next(new StatusError("Survey hasn't started", 403))
+    if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
+    if (!Survey.active) return next(new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403))
+    if (Survey.archived) return next(new StatusError("Survey has been archived and answering is no longer possible", 403))
+
+    const savedAnswers = await db.Answer.findAll({
+      where: {
+        SurveySurveyId: Survey.surveyId,
+        UserUserId: User.userId,
+        final: false
+      }
+    })
+
+    return res.status(200).json({Survey, savedAnswers})
+  }))
+  app.post('/survey/update', wrapAsync(async (req, res) => {
     
     let transaction
     const sendMails = []
@@ -158,7 +220,8 @@ module.exports = (app, db) => {
       await Survey.update({
         name: req.body.name,
         endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59) : null,
-        respondents_size: Survey.anon ? anonEmails.length + Survey.respondents_size : emails.length
+        respondents_size: Survey.anon ? anonEmails.length + Survey.respondents_size : emails.length,
+        active: req.body.active
       }, {transaction})
 
       if (Survey.anon) {
@@ -170,17 +233,14 @@ module.exports = (app, db) => {
             entry_hash: hash
           }, {transaction})
           await Group.addAnonUser(anonuser, {transaction})
-          sendMails.push(() => sendMail(to, 'Uusi kysely', 
-          `Täytä anonyymi kysely http://localhost:8080/questionnaire/${Survey.surveyId}/${hash}
+          sendMails.push([to, 'Uusi kysely', 
+          `Täytä anonyymi kysely ${mailUrl}/anon/questionnaire/${Survey.surveyId}/${hash}
           <br><br>
           ${Survey.message}
-          `))
+          `])
         }
       } else {
-        const Users = await db.User.findAll({
-          where: {
-            UserGroupId: Group.id
-          },
+        const Users = await Group.getUsers({
           lock: true,
           transaction
         })
@@ -198,18 +258,13 @@ module.exports = (app, db) => {
             lock: true,
             transaction
           })
-          await User.addSurvey(Survey, {transaction})
           await Group.addUser(User, {transaction})
-          //sendMails.push(() => sendMail(to, 'Uusi kysely', 
-          //`Täytä autentikoitu kysely http://localhost:8080/questionnaire/${Survey.surveyId}/${hash}
-          //<br><br>
-          //${Survey.message}
-          //`))
+          sendMails.push([to, 'Uusi kysely',
+          `Täytä kysely ${mailUrl}/auth/questionnaire/${Survey.surveyId}/${User.userId}`])
         }
         for (const User of removedRespondents) {
-          await User.removeSurvey(Survey, {transaction})
           await Group.removeUser(User, {transaction})
-          await db.Answer.destroy({
+          const rows = await db.Answer.destroy({
             where: {
               SurveySurveyId: Survey.surveyId,
               UserUserId: User.userId
@@ -217,6 +272,9 @@ module.exports = (app, db) => {
             force: true,
             transaction
           })
+          if (rows) {
+            await Survey.decrement('responses', {transaction})
+          }
         }
       }
       
@@ -224,32 +282,22 @@ module.exports = (app, db) => {
 
     } catch(err) {
       await transaction.rollback()
-      console.log(err)
-    } finally {
-      if (transaction.finished === 'commit') {
-        sendMails.forEach(sendMail => sendMail())
-        res.json(await db.Survey.findByPk(req.body.surveyId, {
-          include: {
-            model: db.UserGroup,
-            include: {
-              model: db.User
-            }
-          }
-        }))
-      } else res.send('Survey update failed')
+      throw err
     }
-  })
-  app.post('/survey/suspendactivate', (req, res) => {
-    db.Survey.update({
-        active: req.body.active
-      },{
-      where: {
-        surveyId: req.body.id
-      },
-      returning: []
-    }).then(([,[survey]]) => survey ? res.send("Survey state changed succesfully") : res.send("No survey found")).catch(err => res.json({ err: err }))
-  })
+    if (transaction.finished === 'commit') {
+      sendMails.forEach(params => sendMail(...params))
+      res.json(await db.Survey.findByPk(req.body.surveyId, {
+        include: {
+          model: db.UserGroup,
+          include: {
+            model: db.User
+          }
+        }
+      }))
+    }
+  }))
   app.post('/survey/delete', (req, res) => {
+    //TODO: make it delete all answers and questions (usergroups?)
     db.Survey.destroy({
       where: {
         surveyId: req.body.id
@@ -267,11 +315,11 @@ module.exports = (app, db) => {
     }).then(([,[survey]]) => survey ? res.send("Survey archived succesfully") : res.send("No survey found")).catch(err => res.json({ err: err }))
   })
   app.get('/surveys/:userId', (req, res) => {
-    db.User.findOne({
+    db.User.findAll({
       where: {
         userId: req.params.userId
       },
-      include: [db.Survey]
+      include: [ db.Survey ]
     }).then(result => result ? res.json(result) : res.json({ err: 'no user found' })).catch(err => res.json({ err: err }))
   })
 }

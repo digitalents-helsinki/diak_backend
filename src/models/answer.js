@@ -7,6 +7,10 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       primaryKey: true
     },
+    final: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    },
     value: {
       type: DataTypes.INTEGER
     },
