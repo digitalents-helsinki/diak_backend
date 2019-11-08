@@ -14,7 +14,9 @@ module.exports = (sequelize, DataTypes) => {
 
   UserGroup.associate = models => {
     UserGroup.hasMany(models.AnonUser)
-    UserGroup.hasMany(models.User)
+    UserGroup.belongsToMany(models.User, {
+      through: 'UserGroup_User'
+    })
     UserGroup.belongsTo(models.Survey)
   }
 
