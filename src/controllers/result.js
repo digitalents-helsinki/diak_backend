@@ -473,7 +473,7 @@ module.exports = (app, db) => {
             savedAnswer.setAnonUser(anonuser, {transaction})
           ])
         } else {
-          savedAnswer.update({
+          await savedAnswer.update({
             value: answer.val,
             description: answer.desc
           }, {transaction})
@@ -641,32 +641,5 @@ module.exports = (app, db) => {
       `)
     
     return res.status(200).send("Email sent")
-  }))
-
-  /* create test surveys result */
-
-  app.post("/testresult/create", wrapAsync(async (req, res) => {
-    let testikysely = await db.Survey.findOne({
-      where: {
-        name: "testikysely"
-      }
-    })
-    testikysely.increment('responses')
-    db.Question.findAll({
-      where: {
-        SurveySurveyId: testikysely.surveyId
-      }
-    }).then(async questions => {
-      questions.forEach(async question => {
-        let answer = await db.Answer.create({
-          answerId: uuidv4(),
-          value: req.body.answers[question.number - 1].val,
-          description: req.body.answers[question.number - 1].desc
-        })
-        answer.setSurvey(testikysely.surveyId)
-        answer.setQuestion(question)
-      })
-      return res.json({status: 'ok'})
-    }).catch(err => console.log(err))
   }))
 }

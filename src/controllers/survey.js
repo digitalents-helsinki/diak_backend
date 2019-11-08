@@ -1,6 +1,7 @@
 // const express = require('express')
 const uuidv4 = require('uuid/v4')
 const sendMail = require('../mail')
+const mailUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://stupefied-joliot-1a8c88.netlify.com'
 const crypto = require('crypto')
 const checkToken = require('../jwt')
 const wrapAsync = require('../wrapAsync')
@@ -50,7 +51,7 @@ module.exports = (app, db) => {
           })
           group.addAnonUser(anonuser)
           sendMail(to, 'Uusi kysely', 
-          `Täytä anonyymi kysely http://localhost:8080/anon/questionnaire/${Survey.surveyId}/${hash}
+          `Täytä anonyymi kysely ${mailUrl}/anon/questionnaire/${Survey.surveyId}/${hash}
           <br><br>
           ${Survey.message}
           `)
@@ -60,7 +61,7 @@ module.exports = (app, db) => {
             if (obj) {
               group.addUser(obj)
               sendMail(to, 'Uusi kysely',
-              `Täytä kysely http://localhost:8080/auth/questionnaire/${Survey.surveyId}/${obj.userId}`)
+              `Täytä kysely ${mailUrl}/auth/questionnaire/${Survey.surveyId}/${obj.userId}`)
             } else {
               let user = await db.User.create({
                 userId: uuidv4(),
@@ -68,7 +69,7 @@ module.exports = (app, db) => {
               })
               group.addUser(user)
               sendMail(to, 'Uusi kysely',
-              `Täytä kysely http://localhost:8080/auth/questionnaire/${Survey.surveyId}/${user.userId}`)
+              `Täytä kysely ${mailUrl}/auth/questionnaire/${Survey.surveyId}/${user.userId}`)
             }
             return true
           })
@@ -80,30 +81,6 @@ module.exports = (app, db) => {
     .catch(err => console.log(err))
     res.json({ success: true })
   })
-  app.post('/testsurvey/', wrapAsync(async (req, res) => {
-    db.Survey.findOrCreate({
-      where: {
-        name: "testikysely"
-      },
-      defaults: {
-        surveyId: uuidv4(),
-        name: "testikysely",
-        anon: true,
-        archived: false,
-        active: true,
-        Questions: [{name:"health",number:1},{name:"overcoming",number:2},{name:"living",number:3},{name:"coping",number:4},{name:"family",number:5},{name:"friends",number:6},{name:"finance",number:7},{name:"strengths",number:8},{name:"self_esteem",number:9},{name:"life_as_whole",number:10}].map(question => {
-          return {
-            questionId: uuidv4(),
-            name: question.name,
-            number: question.number
-          }
-        })
-      },
-      include: [ db.Question ]
-    }).then(async ([testSurvey]) => {
-      return res.send(testSurvey.surveyId)
-    }).catch(err => console.log(err))
-  }))
   app.get('/survey/all', wrapAsync(async (req, res) => {
     res.json(await db.Survey.findAll({
       include: {
@@ -257,7 +234,7 @@ module.exports = (app, db) => {
           }, {transaction})
           await Group.addAnonUser(anonuser, {transaction})
           sendMails.push([to, 'Uusi kysely', 
-          `Täytä anonyymi kysely http://localhost:8080/anon/questionnaire/${Survey.surveyId}/${hash}
+          `Täytä anonyymi kysely ${mailUrl}/anon/questionnaire/${Survey.surveyId}/${hash}
           <br><br>
           ${Survey.message}
           `])
@@ -283,7 +260,7 @@ module.exports = (app, db) => {
           })
           await Group.addUser(User, {transaction})
           sendMails.push([to, 'Uusi kysely',
-          `Täytä kysely http://localhost:8080/auth/questionnaire/${Survey.surveyId}/${User.userId}`])
+          `Täytä kysely ${mailUrl}/auth/questionnaire/${Survey.surveyId}/${User.userId}`])
         }
         for (const User of removedRespondents) {
           await Group.removeUser(User, {transaction})
