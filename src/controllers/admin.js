@@ -1,16 +1,33 @@
 const uuidv4 = require('uuid/v4')
+const { randomBytes } = require('crypto')
+const argon2 = require('argon2')
 
 module.exports = (app, db) => {
-  app.get('/admin/:id', (req, res) => {
-    db.Admin.findAll({
+  app.get('/admins/', (req, res) => {
+    db.User.findAll({
       where: {
-        id: req.params.id
+        role: 'admin'
       }
     }).then((result) => res.json(result))
   })
-  app.post("/admin/create", (req, res) => {
-    db.Admin.create({
-      adminId: uuidv4()
+  app.post("/admin/create", async (req, res) => {
+    const salt = randomBytes(32)
+    const hashedPassword = await argon2.hash(req.body.password, { salt })
+    db.User.create({
+      userId: uuidv4(),
+      role: 'admin',
+      email: req.body.username,
+      password: hashedPassword,
+      salt: salt.toString('hex')
+    })
+    res.json({success: 'true'})
+  })
+  app.post("/admin/delete", (req, res) => {
+    db.User.destroy({
+      where: {
+        role: 'admin',
+        userId: req.body.id
+      }
     })
     res.json({status: 'ok'})
   })
