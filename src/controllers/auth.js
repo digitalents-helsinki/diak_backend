@@ -57,9 +57,9 @@ module.exports = (app, db) => {
     if (
       req.body.username === process.env.SUPERVISOR_USERNAME && 
       req.body.password === process.env.SUPERVISOR_PASSWORD) {
-        res.json({success: 'true'})
+        res.json({success: true})
     } else {
-      res.json({success: 'false'})
+      res.json({success: false})
     }
   }) 
 
