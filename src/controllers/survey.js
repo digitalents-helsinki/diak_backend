@@ -131,7 +131,15 @@ module.exports = (app, db) => {
 
     if (alreadyAnswered) return res.redirect(303, `/anon/result/${req.params.id}/${req.params.entry_hash}`)
 
-    return res.status(200).json(Survey)
+    const savedAnswers = await db.Answer.findAll({
+      where: {
+        SurveySurveyId: Survey.surveyId,
+        AnonUserId: AnonUser.id,
+        final: false
+      }
+    })
+
+    return res.status(200).json({ Survey, savedAnswers })
   }))
   app.get('/auth/survey/:id', checkToken, wrapAsync(async (req, res, next) => {
     const Survey = await db.Survey.findByPk(req.params.id, {
@@ -172,8 +180,16 @@ module.exports = (app, db) => {
     })
 
     if (alreadyAnswered) return res.redirect(303, `/auth/result/${req.params.id}`)
+    
+    const savedAnswers = await db.Answer.findAll({
+      where: {
+        SurveySurveyId: Survey.surveyId,
+        UserUserId: User.userId,
+        final: false
+      }
+    })
 
-    return res.status(200).json(Survey)
+    return res.status(200).json({ Survey, savedAnswers })
   }))
   app.post('/survey/update', wrapAsync(async (req, res) => {
     
