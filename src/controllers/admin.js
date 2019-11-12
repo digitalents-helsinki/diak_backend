@@ -1,6 +1,7 @@
 const uuidv4 = require('uuid/v4')
 const { randomBytes } = require('crypto')
 const argon2 = require('argon2')
+const sendMail = require('../mail')
 
 module.exports = (app, db) => {
   app.get('/admins/', (req, res) => {
@@ -13,13 +14,14 @@ module.exports = (app, db) => {
   app.post("/admin/create", async (req, res) => {
     const salt = randomBytes(32)
     const hashedPassword = await argon2.hash(req.body.password, { salt })
-    db.User.create({
+    const User = await db.User.create({
       userId: uuidv4(),
       role: 'admin',
       email: req.body.username,
       password: hashedPassword,
       salt: salt.toString('hex')
     })
+    sendMail(req.body.username, 'Tervetuloa', 'Olet nyt järjestelmänvalvoja')
     res.json({success: 'true'})
   })
   app.post("/admin/delete", (req, res) => {
