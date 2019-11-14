@@ -53,6 +53,16 @@ module.exports = (app, db) => {
 
   })
 
+  app.post('/supervisor/login', (req, res) => {
+    if (
+      req.body.username === process.env.SUPERVISOR_USERNAME && 
+      req.body.password === process.env.SUPERVISOR_PASSWORD) {
+        res.json({success: true})
+    } else {
+      res.json({success: false})
+    }
+  }) 
+
   function generateToken(user) {
     const today = new Date()
     const exp = new Date(today)
