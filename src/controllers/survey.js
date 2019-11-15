@@ -196,7 +196,11 @@ module.exports = (app, db) => {
     try {
       transaction = await db.sequelize.transaction();
 
-      const Survey = await db.Survey.findByPk(req.body.surveyId, {
+      const Survey = await db.Survey.findOne({
+        where: {
+          surveyId: req.body.surveyId,
+          archived: false
+        },
         lock: true,
         rejectOnEmpty: true,
         transaction
