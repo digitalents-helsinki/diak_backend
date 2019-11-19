@@ -162,7 +162,7 @@ module.exports = (app, db) => {
 
     if (!User) return next(new StatusError("User does not exist", 401))
 
-    if (!Group.hasUser(User)) return next(new StatusError("User does not have access to the survey", 401))
+    if (!await Group.hasUser(User)) return next(new StatusError("User does not have access to the survey", 401))
 
     const alreadyAnswered = await db.Answer.findOne({
       where: {
