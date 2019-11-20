@@ -15,6 +15,7 @@ module.exports = (app, db) => {
     }
     db.Survey.create({
       surveyId: uuidv4(),
+      ownerId: req.body.ownerId,
       name: req.body.id,
       message: req.body.message,
       anon: req.body.anon,
@@ -81,8 +82,11 @@ module.exports = (app, db) => {
     .catch(err => console.log(err))
     res.json({ success: true })
   })
-  app.get('/survey/all', wrapAsync(async (req, res) => {
+  app.get('/survey/:ownerId', wrapAsync(async (req, res) => {
     res.json(await db.Survey.findAll({
+      where: {
+        ownerId: req.params.ownerId
+      },
       include: {
         model: db.UserGroup,
         include: {
