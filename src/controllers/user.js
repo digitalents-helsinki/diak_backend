@@ -3,7 +3,7 @@ const wrapAsync = require('../wrapAsync')
 const StatusError = require('../statusError')
 
 module.exports = (app, db) => {
-  app.get('/user/:id', checkToken, wrapAsync(async (req, res, next) => {
+  app.get('/user/info', checkToken, wrapAsync(async (req, res, next) => {
     const User = await db.User.findOne({
       where: {
         email: res.locals.decoded.email
@@ -14,7 +14,7 @@ module.exports = (app, db) => {
 
     return res.json(User)
   })),
-  app.post('/user/:userId/info/update', checkToken, wrapAsync(async (req, res, next) => {
+  app.post('/user/info/update', checkToken, wrapAsync(async (req, res, next) => {
     const [rows] = await db.User.update({
       name: req.body.personalinfo.name,
       address: req.body.personalinfo.address,
