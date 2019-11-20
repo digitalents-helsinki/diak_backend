@@ -21,7 +21,7 @@ module.exports = (app, db) => {
       password: hashedPassword,
       salt: salt.toString('hex')
     })
-    sendMail(req.body.username, 'Tervetuloa', 'Olet nyt järjestelmänvalvoja')
+    sendMail(req.body.username, 'Tervetuloa', 'Olet nyt hallinnoitsija.')
     res.json({success: 'true'})
   })
   app.post("/admin/delete", (req, res) => {
