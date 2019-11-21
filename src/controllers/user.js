@@ -16,11 +16,11 @@ module.exports = (app, db) => {
   })),
   app.post('/user/info/update', checkToken, wrapAsync(async (req, res, next) => {
     const [rows] = await db.User.update({
-      name: req.body.personalinfo.name,
-      post_number: req.body.personalinfo.postnumber,
-      birth_date: req.body.personalinfo.birthdate,
-      gender:req.body.personalinfo.gender,
-      phone_number: req.body.personalinfo.phonenumber
+      name: req.body.personalInfo.name,
+      post_number: req.body.personalInfo.postNumber,
+      birth_date: req.body.personalInfo.birthDate,
+      gender:req.body.personalInfo.gender,
+      phone_number: req.body.personalInfo.phoneNumber
     },
     {
       where: {
