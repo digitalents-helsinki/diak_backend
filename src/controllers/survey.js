@@ -115,6 +115,13 @@ module.exports = (app, db) => {
 
     if (!AnonUser) return next(new StatusError("User does not exist or does not have access to the survey", 401))
 
+    const currentTime = Date.now()
+
+    if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) return next(new StatusError("Survey hasn't started", 403))
+    if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
+    if (!Survey.active) return next(new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403))
+    if (Survey.archived) return next(new StatusError("Survey has been archived and answering is no longer possible", 403))
+
     const alreadyAnswered = await db.Answer.findOne({
       where: {
         final: true,
@@ -123,14 +130,7 @@ module.exports = (app, db) => {
       }
     })
 
-    if (alreadyAnswered) return next(new StatusError("User has already answered the survey", 403))
-
-    const currentTime = Date.now()
-
-    if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) return next(new StatusError("Survey hasn't started", 403))
-    if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
-    if (!Survey.active) return next(new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403))
-    if (Survey.archived) return next(new StatusError("Survey has been archived and answering is no longer possible", 403))
+    if (alreadyAnswered) return res.redirect(303, `/anon/result/${req.params.id}/${req.params.entry_hash}`)
 
     const savedAnswers = await db.Answer.findAll({
       where: {
@@ -140,7 +140,7 @@ module.exports = (app, db) => {
       }
     })
 
-    return res.status(200).json({Survey, savedAnswers})
+    return res.status(200).json({ Survey, savedAnswers })
   }))
   app.get('/auth/survey/:id', checkToken, wrapAsync(async (req, res, next) => {
     const Survey = await db.Survey.findByPk(req.params.id, {
@@ -165,6 +165,13 @@ module.exports = (app, db) => {
 
     if (!await Group.hasUser(User)) return next(new StatusError("User does not have access to the survey", 401))
 
+    const currentTime = Date.now()
+
+    if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) return next(new StatusError("Survey hasn't started", 403))
+    if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
+    if (!Survey.active) return next(new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403))
+    if (Survey.archived) return next(new StatusError("Survey has been archived and answering is no longer possible", 403))
+
     const alreadyAnswered = await db.Answer.findOne({
       where: {
         final: true,
@@ -173,15 +180,8 @@ module.exports = (app, db) => {
       }
     })
 
-    if (alreadyAnswered) return next(new StatusError("User has already answered the survey", 403))
-
-    const currentTime = Date.now()
-
-    if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) return next(new StatusError("Survey hasn't started", 403))
-    if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
-    if (!Survey.active) return next(new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403))
-    if (Survey.archived) return next(new StatusError("Survey has been archived and answering is no longer possible", 403))
-
+    if (alreadyAnswered) return res.redirect(303, `/auth/result/${req.params.id}`)
+    
     const savedAnswers = await db.Answer.findAll({
       where: {
         SurveySurveyId: Survey.surveyId,
@@ -190,7 +190,7 @@ module.exports = (app, db) => {
       }
     })
 
-    return res.status(200).json({Survey, savedAnswers})
+    return res.status(200).json({ Survey, savedAnswers })
   }))
   app.post('/survey/update', wrapAsync(async (req, res) => {
     

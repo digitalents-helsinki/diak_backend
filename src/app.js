@@ -19,7 +19,7 @@ app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
 app.use(cors())
 
-db.sequelize.sync()
+db.sequelize.sync({ force: false })
 .then(() => {
   app.listen(process.env.PORT, () => {
     console.log(`app listening on port ${process.env.PORT}`)

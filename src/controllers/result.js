@@ -19,7 +19,7 @@ module.exports = (app, db) => {
     if (!AnonUser) return next(new StatusError("User does not exist", 403))
 
     const Result = await db.Survey.findByPk(req.params.id, {
-      attributes: ['name'],
+      attributes: ['name', 'message', 'startDate', 'endDate', 'active', 'archived'],
       include: {
         model: db.Question,
         attributes: ['name', 'number', 'title'],
@@ -36,6 +36,13 @@ module.exports = (app, db) => {
     })
 
     if (!Result) return next(new StatusError("Result does not exist", 404))
+
+    const currentTime = Date.now()
+
+    if ((Result.startDate !== null) && (currentTime < Result.startDate.getTime())) return next(new StatusError("Survey hasn't started", 403))
+    if ((Result.endDate !== null) && (Result.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
+    if (!Result.active) return next(new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403))
+    if (Result.archived) return next(new StatusError("Survey has been archived and answering is no longer possible", 403))
 
     const Averages = await db.Question.findAll({
       where: {
@@ -68,7 +75,7 @@ module.exports = (app, db) => {
     if (!User) return next(new StatusError("User does not exist", 403))
 
     const Result = await db.Survey.findByPk(req.params.id, {
-      attributes: ['name'],
+      attributes: ['name', 'message', 'startDate', 'endDate', 'active', 'archived'],
       include: {
         model: db.Question,
         attributes: ['name', 'number', 'title'],
@@ -85,6 +92,13 @@ module.exports = (app, db) => {
     })
 
     if (!Result) return next(new StatusError("Result does not exist", 404))
+
+    const currentTime = Date.now()
+    
+    if ((Result.startDate !== null) && (currentTime < Result.startDate.getTime())) return next(new StatusError("Survey hasn't started", 403))
+    if ((Result.endDate !== null) && (Result.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
+    if (!Result.active) return next(new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403))
+    if (Result.archived) return next(new StatusError("Survey has been archived and answering is no longer possible", 403))
 
     const Averages = await db.Question.findAll({
       where: {
