@@ -17,7 +17,7 @@ module.exports = (app, db) => {
   app.post('/user/info/update', checkToken, wrapAsync(async (req, res, next) => {
     const [rows] = await db.User.update({
       name: req.body.personalinfo.name,
-      address: req.body.personalinfo.address,
+      post_number: req.body.personalinfo.postnumber,
       birth_date: req.body.personalinfo.birthdate,
       gender:req.body.personalinfo.gender,
       phone_number: req.body.personalinfo.phonenumber

@@ -10,11 +10,9 @@ const StatusError = require('../statusError')
 
 module.exports = (app, db) => {
   app.post('/survey/create', (req, res, next) => {
-    if (req.body.questions.some(question => !question.name && (question.title.length > 100 || question.description.length > 200 || (question.help && question.help.length > 1000)))) {
-      return res.json({success: false})
-    }
     db.Survey.create({
       surveyId: uuidv4(),
+      ownerId: req.body.ownerId,
       name: req.body.id,
       message: req.body.message,
       anon: req.body.anon,
@@ -81,8 +79,11 @@ module.exports = (app, db) => {
     .catch(err => console.log(err))
     res.json({ success: true })
   })
-  app.get('/survey/all', wrapAsync(async (req, res) => {
+  app.get('/survey/:ownerId', wrapAsync(async (req, res) => {
     res.json(await db.Survey.findAll({
+      where: {
+        ownerId: req.params.ownerId
+      },
       include: {
         model: db.UserGroup,
         include: {
@@ -162,7 +163,7 @@ module.exports = (app, db) => {
 
     if (!User) return next(new StatusError("User does not exist", 401))
 
-    if (!Group.hasUser(User)) return next(new StatusError("User does not have access to the survey", 401))
+    if (!await Group.hasUser(User)) return next(new StatusError("User does not have access to the survey", 401))
 
     const currentTime = Date.now()
 
@@ -199,7 +200,11 @@ module.exports = (app, db) => {
     try {
       transaction = await db.sequelize.transaction();
 
-      const Survey = await db.Survey.findByPk(req.body.surveyId, {
+      const Survey = await db.Survey.findOne({
+        where: {
+          surveyId: req.body.surveyId,
+          archived: false
+        },
         lock: true,
         rejectOnEmpty: true,
         transaction

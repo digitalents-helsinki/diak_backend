@@ -7,8 +7,11 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       primaryKey: true
     },
+    ownerId: {
+      type: DataTypes.UUID
+    },
     name: {
-      type: DataTypes.TEXT
+      type: DataTypes.STRING(100)
     },
     message: {
       type: DataTypes.TEXT

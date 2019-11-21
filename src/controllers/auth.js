@@ -8,7 +8,12 @@ module.exports = (app, db) => {
   app.post('/signup', wrapAsync(async (req, res) => {
     const salt = randomBytes(32)
     const hashedPassword = await argon2.hash(req.body.password, { salt })
-    db.User.findOne({ where: {email: req.body.email }})
+    db.User.findOne({
+      where: {
+        email: req.body.email,
+        password: null
+      }
+    })
     .then(obj => {
       if(obj) {
         return obj.update({

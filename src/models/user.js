@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
     salt: {
       type: DataTypes.TEXT
     },
-    address: {
+    post_number: {
       type: DataTypes.TEXT
     },
     phone_number: {
@@ -35,7 +35,6 @@ module.exports = (sequelize, DataTypes) => {
   })
 
   User.associate = models => {
-    User.hasMany(models.SurveyResult)
     User.belongsToMany(models.UserGroup, {
       through: 'UserGroup_User'
     })

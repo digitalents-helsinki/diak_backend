@@ -7,6 +7,15 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       primaryKey: true
     },
+    /*birth_date: {
+      type: DataTypes.DATE
+    },*/
+    age: {
+      type: DataTypes.INTEGER
+    },
+    gender: {
+      type: DataTypes.TEXT
+    },
     entry_hash: {
       type: DataTypes.TEXT
     }
@@ -14,8 +23,6 @@ module.exports = (sequelize, DataTypes) => {
 
   AnonUser.associate = models => {
     AnonUser.belongsTo(models.UserGroup)
-    AnonUser.hasOne(models.SurveyResult)
-    AnonUser.hasMany(models.Answer)
   }
 
   return AnonUser

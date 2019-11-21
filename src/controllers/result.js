@@ -202,7 +202,6 @@ module.exports = (app, db) => {
   
 
       for (const answer of req.body.answers) {
-        if (answer.description && answer.description.length > 2000) throw new StatusError("Answer is too long", 400)
         const [savedAnswer, created] = await db.Answer.findOrCreate({
           where: {
             SurveySurveyId: Survey.surveyId,
@@ -289,7 +288,6 @@ module.exports = (app, db) => {
       if (survey.archived) throw new StatusError("Survey has been archived and answering is no longer possible", 403)
 
       for (const answer of req.body.answers) {
-        if (answer.description && answer.description.length > 2000) throw new StatusError("Answer is too long", 400)
         const [savedAnswer, created] = await db.Answer.findOrCreate({
           where: {
             SurveySurveyId: survey.surveyId,
@@ -382,7 +380,6 @@ module.exports = (app, db) => {
   
 
       for (const answer of req.body.answers) {
-        if (answer.description && answer.description.length > 2000) throw new StatusError("Answer is too long", 400)
         const [savedAnswer, created] = await db.Answer.findOrCreate({
           where: {
             SurveySurveyId: Survey.surveyId,
@@ -464,7 +461,6 @@ module.exports = (app, db) => {
       if (survey.archived) throw new StatusError("Survey has been archived and answering is no longer possible", 403)
 
       for (const answer of req.body.answers) {
-        if (answer.description && answer.description.length > 2000) throw new StatusError("Answer is too long", 400)
         const [savedAnswer, created] = await db.Answer.findOrCreate({
           where: {
             SurveySurveyId: survey.surveyId,
