@@ -12,6 +12,7 @@ module.exports = (app, db) => {
   app.post('/survey/create', (req, res, next) => {
     db.Survey.create({
       surveyId: uuidv4(),
+      ownerId: req.body.ownerId,
       name: req.body.id,
       message: req.body.message,
       anon: req.body.anon,
@@ -78,8 +79,11 @@ module.exports = (app, db) => {
     .catch(err => console.log(err))
     res.json({ success: true })
   })
-  app.get('/survey/all', wrapAsync(async (req, res) => {
+  app.get('/survey/:ownerId', wrapAsync(async (req, res) => {
     res.json(await db.Survey.findAll({
+      where: {
+        ownerId: req.params.ownerId
+      },
       include: {
         model: db.UserGroup,
         include: {
@@ -159,7 +163,7 @@ module.exports = (app, db) => {
 
     if (!User) return next(new StatusError("User does not exist", 401))
 
-    if (!Group.hasUser(User)) return next(new StatusError("User does not have access to the survey", 401))
+    if (!await Group.hasUser(User)) return next(new StatusError("User does not have access to the survey", 401))
 
     const alreadyAnswered = await db.Answer.findOne({
       where: {
