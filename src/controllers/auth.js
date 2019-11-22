@@ -76,6 +76,7 @@ module.exports = (app, db) => {
       {
         role: user.role,
         email: user.email,
+        userId: user.userId,
         exp: exp.getTime() / 100
       },
       process.env.JWT_KEY

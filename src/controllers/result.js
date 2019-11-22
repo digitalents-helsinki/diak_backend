@@ -1,6 +1,6 @@
 const uuidv4 = require('uuid/v4')
 const sendMail = require('../mail')
-const checkToken = require('../jwt')
+const { authenticateUser, authenticateAdmin } = require('../jwt')
 const wrapAsync = require('../wrapAsync')
 const StatusError = require('../statusError')
 
@@ -64,7 +64,7 @@ module.exports = (app, db) => {
 
   /* get auth users survey result */
 
-  app.get('/auth/result/:id', checkToken, wrapAsync(async (req, res, next) => {
+  app.get('/auth/result/:id', authenticateUser, wrapAsync(async (req, res, next) => {
     const User = await db.User.findOne({
       where: {
         email: res.locals.decoded.email
@@ -123,8 +123,12 @@ module.exports = (app, db) => {
 
   /* get surveys results */
 
-  app.get('/results/:id', (req, res) => {
-    db.Survey.findByPk(req.params.id, {
+  app.get('/admin/results/:id', authenticateAdmin, (req, res) => {
+    return db.Survey.findOne({
+      where: {
+        surveyId: req.params.id,
+        ownerId: res.locals.decoded.userId
+      },
       include: [{
         model: db.Question,
         attributes: {
@@ -141,12 +145,12 @@ module.exports = (app, db) => {
           }
         }]
       }]
-    }).then((result) => res.json(result)).catch(err => console.log(err))
+    }).then((result) => res.json(result))
   })
 
   /* create auth users survey result */
 
-  app.post("/auth/result/create", checkToken, wrapAsync(async (req, res) => {
+  app.post("/auth/result/create", authenticateUser, wrapAsync(async (req, res) => {
 
     let transaction;
 
@@ -327,7 +331,7 @@ module.exports = (app, db) => {
 
   }))
 
-  app.post('/auth/result/save', checkToken, wrapAsync(async (req, res, next) => {
+  app.post('/auth/result/save', authenticateUser, wrapAsync(async (req, res, next) => {
     let transaction;
 
     try {
@@ -499,7 +503,7 @@ module.exports = (app, db) => {
     if (transaction.finished === 'commit') res.json({status: "ok"})
   }))
 
-  app.post("/auth/emailresult", checkToken, wrapAsync(async (req, res, next) => {
+  app.post("/auth/emailresult", authenticateUser, wrapAsync(async (req, res, next) => {
     
     const User = await db.User.findOne({
       where: {

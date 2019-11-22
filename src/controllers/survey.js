@@ -3,16 +3,16 @@ const uuidv4 = require('uuid/v4')
 const sendMail = require('../mail')
 const mailUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://stupefied-joliot-1a8c88.netlify.com'
 const crypto = require('crypto')
-const checkToken = require('../jwt')
+const { authenticateUser, authenticateAdmin } = require('../jwt')
 const wrapAsync = require('../wrapAsync')
 const StatusError = require('../statusError')
 // const router = express.Router()
 
 module.exports = (app, db) => {
-  app.post('/survey/create', (req, res, next) => {
+  app.post('/survey/create', authenticateAdmin, (req, res, next) => {
     db.Survey.create({
       surveyId: uuidv4(),
-      ownerId: req.body.ownerId,
+      ownerId: res.locals.decoded.userId,
       name: req.body.id,
       message: req.body.message,
       anon: req.body.anon,
@@ -79,10 +79,10 @@ module.exports = (app, db) => {
     .catch(err => console.log(err))
     res.json({ success: true })
   })
-  app.get('/survey/:ownerId', wrapAsync(async (req, res) => {
+  app.get('/admin/survey/all', authenticateAdmin, wrapAsync(async (req, res) => {
     res.json(await db.Survey.findAll({
       where: {
-        ownerId: req.params.ownerId
+        ownerId: res.locals.decoded.userId
       },
       include: {
         model: db.UserGroup,
@@ -142,7 +142,7 @@ module.exports = (app, db) => {
 
     return res.status(200).json({ Survey, savedAnswers })
   }))
-  app.get('/auth/survey/:id', checkToken, wrapAsync(async (req, res, next) => {
+  app.get('/auth/survey/:id', authenticateUser, wrapAsync(async (req, res, next) => {
     const Survey = await db.Survey.findByPk(req.params.id, {
       include: [db.Question]
     })
