@@ -25,7 +25,9 @@ module.exports = (sequelize, DataTypes) => {
     })
 
     Question.associate = models => {
-      Question.hasMany(models.Answer)
+      Question.hasMany(models.Answer, {
+        onDelete: 'CASCADE'
+      })
     }
   
     return Question

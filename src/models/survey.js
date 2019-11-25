@@ -42,9 +42,12 @@ module.exports = (sequelize, DataTypes) => {
     Survey.belongsTo(models.User, {
       foreignKey: 'ownerId'
     })
-    Survey.hasOne(models.UserGroup)
-    Survey.hasMany(models.Question)
-    Survey.hasMany(models.Answer)
+    Survey.hasOne(models.UserGroup, {
+      onDelete: 'CASCADE'
+    })
+    Survey.hasMany(models.Question, {
+      onDelete: 'CASCADE'
+    })
   }
 
   return Survey

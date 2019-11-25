@@ -192,7 +192,7 @@ module.exports = (app, db) => {
 
     return res.status(200).json({ Survey, savedAnswers })
   }))
-  app.post('/survey/update', wrapAsync(async (req, res) => {
+  app.post('/admin/survey/update', authenticateAdmin, wrapAsync(async (req, res, next) => {
     
     let transaction
     const sendMails = []
@@ -203,6 +203,7 @@ module.exports = (app, db) => {
       const Survey = await db.Survey.findOne({
         where: {
           surveyId: req.body.surveyId,
+          ownerId: res.locals.decoded.userId,
           archived: false
         },
         lock: true,
@@ -287,44 +288,40 @@ module.exports = (app, db) => {
 
     } catch(err) {
       await transaction.rollback()
-      throw err
+      return next(err)
     }
     if (transaction.finished === 'commit') {
       sendMails.forEach(params => sendMail(...params))
-      res.json(await db.Survey.findByPk(req.body.surveyId, {
+      const Survey = db.Survey.findByPk(req.body.surveyId, {
         include: {
           model: db.UserGroup,
           include: {
             model: db.User
           }
         }
-      }))
+      })
+      if (Survey) return res.json(Survey)
+      else return next(new StatusError("Survey is gone"), 410)
     }
   }))
-  app.post('/survey/delete', (req, res) => {
-    //TODO: make it delete all answers and questions (usergroups?)
-    db.Survey.destroy({
+  app.post('/survey/delete', authenticateAdmin, (req, res) => {
+    return db.Survey.destroy({
       where: {
-        surveyId: req.body.id
+        surveyId: req.body.id,
+        ownerId: res.locals.decoded.userId
       }
-    }).then(rows => rows ? res.send("Survey deleted succesfully") : res.send("No survey found")).catch(err => res.json({ err: err }))
+    }).then(rows => rows ? res.send("Survey deleted succesfully") : res.send("No survey found"))
   })
-  app.post('/survey/archive', (req, res) => {
-    db.Survey.update({
+  app.post('/survey/archive', authenticateAdmin, (req, res) => {
+    return db.Survey.update({
         archived: true
-      }, {
+      },
+      {
       where: {
-        surveyId: req.body.id
+        surveyId: req.body.id,
+        ownerId: res.locals.decoded.userId
       },
       returning: []
-    }).then(([,[survey]]) => survey ? res.send("Survey archived succesfully") : res.send("No survey found")).catch(err => res.json({ err: err }))
-  })
-  app.get('/surveys/:userId', (req, res) => {
-    db.User.findAll({
-      where: {
-        userId: req.params.userId
-      },
-      include: [ db.Survey ]
-    }).then(result => result ? res.json(result) : res.json({ err: 'no user found' })).catch(err => res.json({ err: err }))
+    }).then(([,[survey]]) => survey ? res.send("Survey archived succesfully") : res.send("No survey found"))
   })
 }
