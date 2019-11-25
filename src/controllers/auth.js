@@ -8,37 +8,38 @@ module.exports = (app, db) => {
   app.post('/signup', wrapAsync(async (req, res) => {
     const salt = randomBytes(32)
     const hashedPassword = await argon2.hash(req.body.password, { salt })
-    db.User.findOne({
+    const [User, created] = await db.User.findOrCreate({
       where: {
         email: req.body.email,
         password: null
+      },
+      defaults: {
+        userId: uuidv4(),
+        role: 'user',
+        email: req.body.email,
+        password: hashedPassword,
+        salt: salt.toString('hex')
       }
     })
-    .then(obj => {
-      if(obj) {
-        return obj.update({
-          role: 'user',
-          password: hashedPassword,
-          salt: salt.toString('hex')
-        })
-      } else {
-        return db.User.create({
-          userId: uuidv4(),
-          role: 'user',
-          email: req.body.email,
-          password: hashedPassword,
-          salt: salt.toString('hex')
-        })
-      }
-    })
-    .catch(err => console.log(err))
-    res.json({ success: 'true' })
+
+    if (!created) {
+      await User.update({
+        role: 'user',
+        password: hashedPassword,
+        salt: salt.toString('hex')
+      })
+    }
+
+    return res.status(201).send("Registration succesful")
   }))
 
   app.post('/signin', wrapAsync(async (req, res) => {
     const userRecord = await db.User.findOne({ 
       where: {
-        email: req.body.email 
+        email: req.body.email,
+        password: {
+          [db.Sequelize.Op.ne]: null
+        }
       }
     })
     if (!userRecord) {
