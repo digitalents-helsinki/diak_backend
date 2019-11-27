@@ -292,7 +292,7 @@ module.exports = (app, db) => {
     }
     if (transaction.finished === 'commit') {
       sendMails.forEach(params => sendMail(...params))
-      const Survey = db.Survey.findByPk(req.body.surveyId, {
+      const Survey = await db.Survey.findByPk(req.body.surveyId, {
         include: {
           model: db.UserGroup,
           include: {
@@ -301,7 +301,7 @@ module.exports = (app, db) => {
         }
       })
       if (Survey) return res.json(Survey)
-      else return next(new StatusError("Survey is gone"), 410)
+      else return res.sendStatus(410)
     }
   }))
   app.post('/survey/delete', authenticateAdmin, (req, res) => {

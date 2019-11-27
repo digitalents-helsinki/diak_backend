@@ -123,12 +123,13 @@ module.exports = (app, db) => {
 
   /* get surveys results */
 
-  app.get('/admin/results/:id', authenticateAdmin, (req, res) => {
+  app.get('/admin/results/:id', authenticateAdmin, (req, res, next) => {
     return db.Survey.findOne({
       where: {
         surveyId: req.params.id,
         ownerId: res.locals.decoded.userId
       },
+      rejectOnEmpty: true,
       include: [{
         model: db.Question,
         attributes: {
@@ -141,11 +142,19 @@ module.exports = (app, db) => {
           },
           required: false,
           attributes: {
-            exclude: ['createdAt', 'updatedAt']
-          }
+            exclude: ['createdAt']
+          },
+          include: [{
+            model: db.User,
+            attributes: ['userId', 'post_number', 'name', 'birth_date', 'gender']
+          }, 
+          {
+            model: db.AnonUser,
+            attributes: ['id', 'age', 'gender']
+          }]
         }]
       }]
-    }).then((result) => res.json(result))
+    }).then(result => res.json(result)).catch(next)
   })
 
   /* create auth users survey result */
