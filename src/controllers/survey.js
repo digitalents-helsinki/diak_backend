@@ -9,78 +9,92 @@ const StatusError = require('../statusError')
 // const router = express.Router()
 
 module.exports = (app, db) => {
-  app.post('/survey/create', authenticateAdmin, (req, res, next) => {
-    db.Survey.create({
-      surveyId: uuidv4(),
-      ownerId: res.locals.decoded.userId,
-      name: req.body.id,
-      message: req.body.message,
-      anon: req.body.anon,
-      startDate: req.body.startDate ? new Date(req.body.startDate).setHours(0, 0, 0) : null,
-      endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59) : null,
-      respondents_size: req.body.respondents_size,
-      archived: false,
-      active: true,
-      Questions: req.body.questions.map(question => {
-        return {
-          questionId: uuidv4(),
-          name: question.name || uuidv4() + '_custom',
-          number: question.number,
-          title: question.title,
-          description: question.description,
-          help: question.help
-        }
+  app.post('/admin/survey/create', authenticateAdmin, wrapAsync(async (req, res, next) => {
+
+    let transaction
+    const sendMails = []
+
+    try {
+      transaction = await db.sequelize.transaction()
+
+      const Survey = await db.Survey.create({
+        surveyId: uuidv4(),
+        ownerId: res.locals.decoded.userId,
+        name: req.body.id,
+        message: req.body.message,
+        anon: req.body.anon,
+        startDate: req.body.startDate ? new Date(req.body.startDate).setHours(0, 0, 0) : null,
+        endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59) : null,
+        respondents_size: req.body.to.length,
+        Questions: req.body.questions.map(question => {
+          return {
+            questionId: uuidv4(),
+            name: question.name || uuidv4() + '_custom',
+            number: question.number,
+            title: question.title,
+            description: question.description,
+            help: question.help
+          }
+        })
+      },
+      { 
+        include: [db.Question],
+        transaction
       })
-    },
-    { include: [db.Question] }
-    ).then(async Survey => {
-      // survey.setAdmin(req.body.adminId)
-      let group = await db.UserGroup.create({
+
+      const Group = await db.UserGroup.create({
         id: uuidv4(),
-        respondents: req.body.anon ? req.body.to : []
-      })
-      group.setSurvey(Survey)
-      req.body.to.map(async to => {
-        if (req.body.anon === true) {
+        respondents: Survey.anon ? req.body.to : []
+      }, {transaction})
+
+      await Group.setSurvey(Survey, {transaction})
+
+      for (const to of req.body.to) {
+        if (Survey.anon) {
           const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
-          let anonuser = await db.AnonUser.create({
+          const AnonUser = await db.AnonUser.create({
             id: uuidv4(),
             entry_hash: hash
-          })
-          group.addAnonUser(anonuser)
-          sendMail(to, 'Uusi kysely', 
+          }, {transaction})
+          await Group.addAnonUser(AnonUser, {transaction})
+          sendMails.push([to, 'Uusi kysely',
           `Täytä anonyymi kysely ${mailUrl}/anon/questionnaire/${Survey.surveyId}/${hash}
           <br><br>
           ${Survey.message}
-          `)
+          `])
         } else {
-          db.User.findOne({ where: {email: to}})
-          .then(async obj => {
-            if (obj) {
-              group.addUser(obj)
-              sendMail(to, 'Uusi kysely',
-              `Täytä kysely ${mailUrl}/auth/questionnaire/${Survey.surveyId}/${obj.userId}`)
-            } else {
-              let user = await db.User.create({
-                userId: uuidv4(),
-                email: to
-              })
-              group.addUser(user)
-              sendMail(to, 'Uusi kysely',
-              `Täytä kysely ${mailUrl}/auth/questionnaire/${Survey.surveyId}/${user.userId}`)
-            }
-            return true
+          const [User] = await db.User.findOrCreate({
+            where: {
+              email: to
+            },
+            defaults: {
+              userId: uuidv4(),
+              email: to
+            },
+            lock: true,
+            transaction
           })
-          .catch(err => console.log(err))
+          await Group.addUser(User, {transaction})
+          sendMails.push([to, 'Uusi kysely',
+          `Täytä kysely ${mailUrl}/auth/questionnaire/${Survey.surveyId}
+          <br><br>
+          ${Survey.message}`])
         }
-      })
-      return true
-    })
-    .catch(err => console.log(err))
-    res.json({ success: true })
-  })
-  app.get('/admin/survey/all', authenticateAdmin, wrapAsync(async (req, res) => {
-    res.json(await db.Survey.findAll({
+      }
+
+      await transaction.commit()
+
+    } catch(err) {
+      await transaction.rollback()
+      return next(err)
+    }
+    if (transaction.finished === 'commit') {
+      sendMails.forEach(params => sendMail(...params))
+      return res.send("Survey succesfully created")
+    }
+  }))
+  app.get('/admin/survey/all', authenticateAdmin, (req, res, next) => {
+    return db.Survey.findAll({
       where: {
         ownerId: res.locals.decoded.userId
       },
@@ -91,8 +105,8 @@ module.exports = (app, db) => {
           attributes: ['email']
         }
       }
-    }))
-  }))
+    }).then(Surveys => Surveys.length ? res.json(Surveys) : res.sendStatus(404)).catch(next)
+  })
   app.get('/anon/survey/:id/:entry_hash', wrapAsync(async (req, res, next) => {
     const Survey = await db.Survey.findByPk(req.params.id, {
       include: [db.Question]
@@ -248,6 +262,7 @@ module.exports = (app, db) => {
         }
       } else {
         const Users = await Group.getUsers({
+          attributes: ['userId', 'email'],
           lock: true,
           transaction
         })
@@ -258,6 +273,7 @@ module.exports = (app, db) => {
             where: {
               email: to
             },
+            attributes: ['userId'],
             defaults: {
               userId: uuidv4(),
               email: to
@@ -267,7 +283,9 @@ module.exports = (app, db) => {
           })
           await Group.addUser(User, {transaction})
           sendMails.push([to, 'Uusi kysely',
-          `Täytä kysely ${mailUrl}/auth/questionnaire/${Survey.surveyId}/${User.userId}`])
+          `Täytä kysely ${mailUrl}/auth/questionnaire/${Survey.surveyId}
+          <br><br>
+          ${Survey.message}`])
         }
         for (const User of removedRespondents) {
           await Group.removeUser(User, {transaction})

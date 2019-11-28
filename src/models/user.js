@@ -12,7 +12,10 @@ module.exports = (sequelize, DataTypes) => {
     },
     email: {
       type: DataTypes.TEXT,
-      unique: true
+      allowNull: false,
+      validate: {
+        isEmail: true
+      }
     },
     password: {
       type: DataTypes.TEXT
@@ -32,6 +35,13 @@ module.exports = (sequelize, DataTypes) => {
     gender: {
       type: DataTypes.TEXT
     }
+  },
+  {
+    indexes: [{ 
+      unique: true,   
+      name: 'unique_email',  
+      fields: [sequelize.fn('lower', sequelize.col('email'))]   
+    }]
   })
 
   User.associate = models => {

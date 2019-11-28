@@ -13,7 +13,7 @@ module.exports = (app, db) => {
       return res.sendStatus(404)
     }
     if (err instanceof db.Sequelize.ValidationError) {
-      return res.append('X-Status-Reason', 'Validation failed').sendStatus(422)
+      return res.status(422).send("Validation failed")
     }
     
     return res.sendStatus(500)

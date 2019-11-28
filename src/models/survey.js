@@ -31,10 +31,12 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: 0
     },
     archived: {
-      type: DataTypes.BOOLEAN
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
     },
     active: {
-      type: DataTypes.BOOLEAN
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
     }
   })
 
