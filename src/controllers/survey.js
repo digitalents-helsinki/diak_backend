@@ -140,7 +140,7 @@ module.exports = (app, db) => {
       }
     })
 
-    return res.status(200).json({ Survey, savedAnswers })
+    return res.json({ Survey, savedAnswers })
   }))
   app.get('/auth/survey/:id', authenticateUser, wrapAsync(async (req, res, next) => {
     const Survey = await db.Survey.findByPk(req.params.id, {
@@ -190,9 +190,9 @@ module.exports = (app, db) => {
       }
     })
 
-    return res.status(200).json({ Survey, savedAnswers })
+    return res.json({ Survey, savedAnswers })
   }))
-  app.post('/admin/survey/update', authenticateAdmin, wrapAsync(async (req, res, next) => {
+  app.patch('/admin/survey/:surveyId/update', authenticateAdmin, wrapAsync(async (req, res, next) => {
     
     let transaction
     const sendMails = []
@@ -202,14 +202,15 @@ module.exports = (app, db) => {
 
       const Survey = await db.Survey.findOne({
         where: {
-          surveyId: req.body.surveyId,
-          ownerId: res.locals.decoded.userId,
-          archived: false
+          surveyId: req.params.surveyId,
+          ownerId: res.locals.decoded.userId
         },
         lock: true,
         rejectOnEmpty: true,
         transaction
       })
+
+      if (Survey.archived) throw new StatusError("Survey has been archived and thus it cannot be modified", 403)
 
       const Group = await db.UserGroup.findOne({
         where: {
@@ -292,7 +293,7 @@ module.exports = (app, db) => {
     }
     if (transaction.finished === 'commit') {
       sendMails.forEach(params => sendMail(...params))
-      const Survey = await db.Survey.findByPk(req.body.surveyId, {
+      const Survey = await db.Survey.findByPk(req.params.surveyId, {
         include: {
           model: db.UserGroup,
           include: {
@@ -304,24 +305,25 @@ module.exports = (app, db) => {
       else return res.sendStatus(410)
     }
   }))
-  app.post('/survey/delete', authenticateAdmin, (req, res) => {
+  app.delete('/admin/survey/:surveyId/delete', authenticateAdmin, (req, res, next) => {
     return db.Survey.destroy({
       where: {
-        surveyId: req.body.id,
+        surveyId: req.params.surveyId,
         ownerId: res.locals.decoded.userId
-      }
-    }).then(rows => rows ? res.send("Survey deleted succesfully") : res.send("No survey found"))
+      },
+      limit: 1
+    }).then(rows => rows ? res.sendStatus(204) : res.sendStatus(404)).catch(next)
   })
-  app.post('/survey/archive', authenticateAdmin, (req, res) => {
+  app.patch('/admin/survey/:surveyId/archive', authenticateAdmin, (req, res, next) => {
     return db.Survey.update({
         archived: true
       },
       {
       where: {
-        surveyId: req.body.id,
+        surveyId: req.params.surveyId,
         ownerId: res.locals.decoded.userId
       },
-      returning: []
-    }).then(([,[survey]]) => survey ? res.send("Survey archived succesfully") : res.send("No survey found"))
+      limit: 1
+    }).then(([rows]) => rows ? res.sendStatus(204) : res.sendStatus(404)).catch(next)
   })
 }
