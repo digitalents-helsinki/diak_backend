@@ -21,7 +21,8 @@
   "scripts": {
     "start": "node src/app.js",
     "dev": "nodemon src/app.js",
-    "debug": "node --inspect src/app.js"
+    "debug": "node --inspect src/app.js",
+    "migrate": "sequelize db:migrate"
   },
   "devDependencies": {
     "eslint": "^6.4.0"
