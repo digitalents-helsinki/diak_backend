@@ -10,7 +10,7 @@ module.exports = (app, db) => {
     const hashedPassword = await argon2.hash(req.body.password, { salt })
     const [User, created] = await db.User.findOrCreate({
       where: {
-        email: req.body.email,
+        $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', req.body.email)),
         password: null
       },
       defaults: {
@@ -36,7 +36,7 @@ module.exports = (app, db) => {
   app.post('/signin', wrapAsync(async (req, res) => {
     const userRecord = await db.User.findOne({ 
       where: {
-        email: req.body.email,
+        $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', req.body.email)),
         password: {
           [db.Sequelize.Op.ne]: null
         }
@@ -76,7 +76,6 @@ module.exports = (app, db) => {
     return jwt.sign(
       {
         role: user.role,
-        email: user.email,
         userId: user.userId,
         exp: exp.getTime() / 100
       },

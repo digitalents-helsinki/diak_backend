@@ -171,7 +171,7 @@ module.exports = (app, db) => {
 
     const User = await db.User.findOne({
       where: {
-        email: res.locals.decoded.email
+        userId: res.locals.decoded.userId
       }
     })
 

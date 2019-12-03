@@ -67,7 +67,7 @@ module.exports = (app, db) => {
   app.get('/auth/result/:id', authenticateUser, wrapAsync(async (req, res, next) => {
     const User = await db.User.findOne({
       where: {
-        email: res.locals.decoded.email
+        userId: res.locals.decoded.userId
       },
       attributes: ['userId']
     })
@@ -184,7 +184,7 @@ module.exports = (app, db) => {
 
       const [User] = await Group.getUsers({
         where: {
-          email: res.locals.decoded.email
+          userId: res.locals.decoded.userId
         },
         attributes: ["userId"],
         lock: true,
@@ -364,7 +364,7 @@ module.exports = (app, db) => {
 
       const [User] = await Group.getUsers({
         where: {
-          email: res.locals.decoded.email
+          userId: res.locals.decoded.userId
         },
         attributes: ["userId"],
         lock: true,
@@ -516,7 +516,7 @@ module.exports = (app, db) => {
     
     const User = await db.User.findOne({
       where: {
-        email: res.locals.decoded.email
+        userId: res.locals.decoded.userId
       }
     })
 

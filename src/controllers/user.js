@@ -6,7 +6,7 @@ module.exports = (app, db) => {
   app.get('/user/info', authenticateUser, wrapAsync(async (req, res, next) => {
     const User = await db.User.findOne({
       where: {
-        email: res.locals.decoded.email
+        userId: res.locals.decoded.userId
       }
     })
 
@@ -24,7 +24,7 @@ module.exports = (app, db) => {
     },
     {
       where: {
-        email: res.locals.decoded.email
+        userId: res.locals.decoded.userId
       }
     })
     if (!rows) return next(new StatusError("Failed to update user information", 500))
