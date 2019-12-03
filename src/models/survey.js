@@ -7,11 +7,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       primaryKey: true
     },
-    ownerId: {
-      type: DataTypes.UUID
-    },
     name: {
-      type: DataTypes.TEXT
+      type: DataTypes.STRING(100)
     },
     message: {
       type: DataTypes.TEXT
@@ -34,18 +31,25 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: 0
     },
     archived: {
-      type: DataTypes.BOOLEAN
+      type: DataTypes.BOOLEAN,
+      defaultValue: false
     },
     active: {
-      type: DataTypes.BOOLEAN
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
     }
   })
 
   Survey.associate = models => {
-    Survey.belongsTo(models.Admin)
-    Survey.hasOne(models.UserGroup)
-    Survey.hasMany(models.Question)
-    Survey.hasMany(models.Answer)
+    Survey.belongsTo(models.User, {
+      foreignKey: 'ownerId'
+    })
+    Survey.hasOne(models.UserGroup, {
+      onDelete: 'CASCADE'
+    })
+    Survey.hasMany(models.Question, {
+      onDelete: 'CASCADE'
+    })
   }
 
   return Survey

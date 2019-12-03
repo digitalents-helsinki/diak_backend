@@ -1,6 +1,6 @@
 const uuidv4 = require('uuid/v4')
 const sendMail = require('../mail')
-const checkToken = require('../jwt')
+const { authenticateUser, authenticateAdmin } = require('../jwt')
 const wrapAsync = require('../wrapAsync')
 const StatusError = require('../statusError')
 
@@ -19,7 +19,7 @@ module.exports = (app, db) => {
     if (!AnonUser) return next(new StatusError("User does not exist", 403))
 
     const Result = await db.Survey.findByPk(req.params.id, {
-      attributes: ['name'],
+      attributes: ['name', 'message', 'startDate', 'endDate', 'active', 'archived'],
       include: {
         model: db.Question,
         attributes: ['name', 'number', 'title'],
@@ -36,6 +36,13 @@ module.exports = (app, db) => {
     })
 
     if (!Result) return next(new StatusError("Result does not exist", 404))
+
+    const currentTime = Date.now()
+
+    if ((Result.startDate !== null) && (currentTime < Result.startDate.getTime())) return next(new StatusError("Survey hasn't started", 403))
+    if ((Result.endDate !== null) && (Result.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
+    if (!Result.active) return next(new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403))
+    if (Result.archived) return next(new StatusError("Survey has been archived and answering is no longer possible", 403))
 
     const Averages = await db.Question.findAll({
       where: {
@@ -57,10 +64,10 @@ module.exports = (app, db) => {
 
   /* get auth users survey result */
 
-  app.get('/auth/result/:id', checkToken, wrapAsync(async (req, res, next) => {
+  app.get('/auth/result/:id', authenticateUser, wrapAsync(async (req, res, next) => {
     const User = await db.User.findOne({
       where: {
-        email: res.locals.decoded.email
+        userId: res.locals.decoded.userId
       },
       attributes: ['userId']
     })
@@ -68,7 +75,7 @@ module.exports = (app, db) => {
     if (!User) return next(new StatusError("User does not exist", 403))
 
     const Result = await db.Survey.findByPk(req.params.id, {
-      attributes: ['name'],
+      attributes: ['name', 'message', 'startDate', 'endDate', 'active', 'archived'],
       include: {
         model: db.Question,
         attributes: ['name', 'number', 'title'],
@@ -85,6 +92,13 @@ module.exports = (app, db) => {
     })
 
     if (!Result) return next(new StatusError("Result does not exist", 404))
+
+    const currentTime = Date.now()
+    
+    if ((Result.startDate !== null) && (currentTime < Result.startDate.getTime())) return next(new StatusError("Survey hasn't started", 403))
+    if ((Result.endDate !== null) && (Result.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
+    if (!Result.active) return next(new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403))
+    if (Result.archived) return next(new StatusError("Survey has been archived and answering is no longer possible", 403))
 
     const Averages = await db.Question.findAll({
       where: {
@@ -109,8 +123,13 @@ module.exports = (app, db) => {
 
   /* get surveys results */
 
-  app.get('/results/:id', (req, res) => {
-    db.Survey.findByPk(req.params.id, {
+  app.get('/admin/results/:id', authenticateAdmin, (req, res, next) => {
+    return db.Survey.findOne({
+      where: {
+        surveyId: req.params.id,
+        ownerId: res.locals.decoded.userId
+      },
+      rejectOnEmpty: true,
       include: [{
         model: db.Question,
         attributes: {
@@ -123,16 +142,24 @@ module.exports = (app, db) => {
           },
           required: false,
           attributes: {
-            exclude: ['createdAt', 'updatedAt']
-          }
+            exclude: ['createdAt']
+          },
+          include: [{
+            model: db.User,
+            attributes: ['userId', 'post_number', 'name', 'birth_date', 'gender']
+          }, 
+          {
+            model: db.AnonUser,
+            attributes: ['id', 'age', 'gender']
+          }]
         }]
       }]
-    }).then((result) => res.json(result)).catch(err => console.log(err))
+    }).then(result => res.json(result)).catch(next)
   })
 
   /* create auth users survey result */
 
-  app.post("/auth/result/create", checkToken, wrapAsync(async (req, res) => {
+  app.post("/auth/result/create", authenticateUser, wrapAsync(async (req, res) => {
 
     let transaction;
 
@@ -157,7 +184,7 @@ module.exports = (app, db) => {
 
       const [User] = await Group.getUsers({
         where: {
-          email: res.locals.decoded.email
+          userId: res.locals.decoded.userId
         },
         attributes: ["userId"],
         lock: true,
@@ -188,7 +215,6 @@ module.exports = (app, db) => {
   
 
       for (const answer of req.body.answers) {
-        if (answer.description && answer.description.length > 2000) throw new StatusError("Answer is too long", 400)
         const [savedAnswer, created] = await db.Answer.findOrCreate({
           where: {
             SurveySurveyId: Survey.surveyId,
@@ -275,7 +301,6 @@ module.exports = (app, db) => {
       if (survey.archived) throw new StatusError("Survey has been archived and answering is no longer possible", 403)
 
       for (const answer of req.body.answers) {
-        if (answer.description && answer.description.length > 2000) throw new StatusError("Answer is too long", 400)
         const [savedAnswer, created] = await db.Answer.findOrCreate({
           where: {
             SurveySurveyId: survey.surveyId,
@@ -315,7 +340,7 @@ module.exports = (app, db) => {
 
   }))
 
-  app.post('/auth/result/save', checkToken, wrapAsync(async (req, res, next) => {
+  app.post('/auth/result/save', authenticateUser, wrapAsync(async (req, res, next) => {
     let transaction;
 
     try {
@@ -339,7 +364,7 @@ module.exports = (app, db) => {
 
       const [User] = await Group.getUsers({
         where: {
-          email: res.locals.decoded.email
+          userId: res.locals.decoded.userId
         },
         attributes: ["userId"],
         lock: true,
@@ -368,7 +393,6 @@ module.exports = (app, db) => {
   
 
       for (const answer of req.body.answers) {
-        if (answer.description && answer.description.length > 2000) throw new StatusError("Answer is too long", 400)
         const [savedAnswer, created] = await db.Answer.findOrCreate({
           where: {
             SurveySurveyId: Survey.surveyId,
@@ -450,7 +474,6 @@ module.exports = (app, db) => {
       if (survey.archived) throw new StatusError("Survey has been archived and answering is no longer possible", 403)
 
       for (const answer of req.body.answers) {
-        if (answer.description && answer.description.length > 2000) throw new StatusError("Answer is too long", 400)
         const [savedAnswer, created] = await db.Answer.findOrCreate({
           where: {
             SurveySurveyId: survey.surveyId,
@@ -489,11 +512,11 @@ module.exports = (app, db) => {
     if (transaction.finished === 'commit') res.json({status: "ok"})
   }))
 
-  app.post("/auth/emailresult", checkToken, wrapAsync(async (req, res, next) => {
+  app.post("/auth/emailresult", authenticateUser, wrapAsync(async (req, res, next) => {
     
     const User = await db.User.findOne({
       where: {
-        email: res.locals.decoded.email
+        userId: res.locals.decoded.userId
       }
     })
 

@@ -14,18 +14,20 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.INTEGER
       },
       title: {
-        type: DataTypes.TEXT
+        type: DataTypes.STRING(100)
       },
       description: {
-        type: DataTypes.TEXT
+        type: DataTypes.STRING(200)
       },
       help: {
-        type: DataTypes.TEXT
+        type: DataTypes.STRING(1000)
       }
     })
 
     Question.associate = models => {
-      Question.hasMany(models.Answer)
+      Question.hasMany(models.Answer, {
+        onDelete: 'CASCADE'
+      })
     }
   
     return Question
