@@ -65,7 +65,7 @@ module.exports = (app, db) => {
         } else {
           const [User] = await db.User.findOrCreate({
             where: {
-              email: to
+              $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', to))
             },
             defaults: {
               userId: uuidv4(),
@@ -105,7 +105,27 @@ module.exports = (app, db) => {
           attributes: ['email']
         }
       }
-    }).then(Surveys => Surveys.length ? res.json(Surveys) : res.sendStatus(404)).catch(next)
+    }).then(Surveys => res.json(Surveys)).catch(next)
+  })
+  app.get('/admin/survey/:surveyId', authenticateAdmin, (req, res, next) => {
+    return db.Survey.findOne({
+      where: {
+        surveyId: req.params.surveyId,
+        ownerId: res.locals.decoded.userId
+      },
+      include: [{
+        model: db.Question,
+        attributes: ['name', 'title', 'description', 'help', 'number']
+      },
+      {
+        model: db.UserGroup,
+        include: {
+          model: db.User,
+          attributes: ['email']
+        }
+      }],
+      rejectOnEmpty: true
+    }).then(Survey => res.json(Survey)).catch(next)
   })
   app.get('/anon/survey/:id/:entry_hash', wrapAsync(async (req, res, next) => {
     const Survey = await db.Survey.findByPk(req.params.id, {
@@ -266,12 +286,14 @@ module.exports = (app, db) => {
           lock: true,
           transaction
         })
-        const addedRespondents = emails.filter(email => !Users.some(user => user.email === email))
-        const removedRespondents = Users.filter(user => !emails.includes(user.email))
+        const comparisonUserEmails = Users.map(user => user.email.toLowerCase())
+        const addedRespondents = emails.filter(email => !comparisonUserEmails.some(userEmail => userEmail === email))
+        const comparisonEmails = emails.map(email => email.toLowerCase())
+        const removedRespondents = Users.filter(user => !comparisonEmails.includes(user.email.toLowerCase()))
         for (const to of addedRespondents) {
           const [User] = await db.User.findOrCreate({
             where: {
-              email: to
+              $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', to))
             },
             attributes: ['userId'],
             defaults: {
