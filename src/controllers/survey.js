@@ -8,93 +8,110 @@ const wrapAsync = require('../wrapAsync')
 const StatusError = require('../statusError')
 // const router = express.Router()
 
-module.exports = (app, db) => {
-  app.post('/admin/survey/create', authenticateAdmin, wrapAsync(async (req, res, next) => {
+const createSurvey = (db, { final } = { final: true }) => wrapAsync(async (req, res, next) => {
 
-    let transaction
-    const sendMails = []
+  let transaction
+  const sendMails = []
 
-    try {
-      transaction = await db.sequelize.transaction()
+  try {
+    transaction = await db.sequelize.transaction()
 
-      const Survey = await db.Survey.create({
-        surveyId: uuidv4(),
+    await db.Survey.destroy({
+      where: {
+        surveyId: req.body.surveyId,
         ownerId: res.locals.decoded.userId,
-        name: req.body.id,
-        message: req.body.message,
-        anon: req.body.anon,
-        startDate: req.body.startDate ? new Date(req.body.startDate).setHours(0, 0, 0) : null,
-        endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59) : null,
-        respondents_size: req.body.to.length,
-        Questions: req.body.questions.map(question => {
-          return {
-            questionId: uuidv4(),
-            name: question.name || uuidv4() + '_custom',
-            number: question.number,
-            title: question.title,
-            description: question.description,
-            help: question.help
-          }
-        })
+        final: false
       },
-      { 
-        include: [db.Question],
-        transaction
-      })
+      limit: 1,
+      transaction
+    })
 
-      const Group = await db.UserGroup.create({
-        id: uuidv4(),
-        respondents: Survey.anon ? req.body.to : []
-      }, {transaction})
+    const Survey = await db.Survey.create({
+      surveyId: req.body.surveyId || uuidv4(),
+      ownerId: res.locals.decoded.userId,
+      name: req.body.id,
+      message: req.body.message,
+      anon: req.body.anon,
+      startDate: req.body.startDate ? new Date(req.body.startDate).setHours(0, 0, 0) : null,
+      endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59) : null,
+      respondents_size: req.body.to.length,
+      final,
+      Questions: req.body.questions.map(question => ({
+        questionId: uuidv4(),
+        name: question.name || uuidv4() + '_custom',
+        number: question.number,
+        title: question.title,
+        description: question.description,
+        help: question.help
+      }))
+    },
+    { 
+      include: [db.Question],
+      transaction
+    })
 
-      await Group.setSurvey(Survey, {transaction})
+    const Group = await db.UserGroup.create({
+      id: uuidv4(),
+      respondents: Survey.anon ? req.body.to : []
+    }, {transaction})
 
-      for (const to of req.body.to) {
-        if (Survey.anon) {
-          const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
-          const AnonUser = await db.AnonUser.create({
-            id: uuidv4(),
-            entry_hash: hash
-          }, {transaction})
-          await Group.addAnonUser(AnonUser, {transaction})
+    await Group.setSurvey(Survey, {transaction})
+
+    for (const to of req.body.to) {
+      if (Survey.anon) {
+        const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
+        const AnonUser = await db.AnonUser.create({
+          id: uuidv4(),
+          entry_hash: hash
+        }, {transaction})
+        await Group.addAnonUser(AnonUser, {transaction})
+        if (final) {
           sendMails.push([to, 'Uusi kysely',
           `Täytä anonyymi kysely ${mailUrl}/anon/questionnaire/${Survey.surveyId}/${hash}
           <br><br>
-          ${Survey.message}
-          `])
-        } else {
-          const [User] = await db.User.findOrCreate({
-            where: {
-              $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', to))
-            },
-            defaults: {
-              userId: uuidv4(),
-              email: to
-            },
-            lock: true,
-            transaction
-          })
-          await Group.addUser(User, {transaction})
+          ${Survey.message}`])
+        }
+      } else {
+        const [User] = await db.User.findOrCreate({
+          where: {
+            $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', to))
+          },
+          defaults: {
+            userId: uuidv4(),
+            email: to
+          },
+          lock: true,
+          transaction
+        })
+        await Group.addUser(User, {transaction})
+        if (final) {
           sendMails.push([to, 'Uusi kysely',
           `Täytä kysely ${mailUrl}/auth/questionnaire/${Survey.surveyId}
           <br><br>
           ${Survey.message}`])
         }
       }
-
-      await transaction.commit()
-
-    } catch(err) {
-      await transaction.rollback()
-      return next(err)
     }
-    if (transaction.finished === 'commit') {
-      sendMails.forEach(params => sendMail(...params))
-      return res.send("Survey succesfully created")
-    }
-  }))
+
+    await transaction.commit()
+
+  } catch(err) {
+    await transaction.rollback()
+    return next(err)
+  }
+  if (transaction.finished === 'commit') {
+    if (final) sendMails.forEach(params => sendMail(...params))
+    return res.send("Survey succesfully created")
+  }
+})
+
+
+
+module.exports = (app, db) => {
+  app.post('/admin/survey/create', authenticateAdmin, createSurvey(db))
+  app.put('/admin/survey/save', authenticateAdmin, createSurvey(db, { final: false }))
   app.get('/admin/survey/all', authenticateAdmin, (req, res, next) => {
-    return db.Survey.findAll({
+    return db.Survey.unscoped().findAll({
       where: {
         ownerId: res.locals.decoded.userId
       },
@@ -108,7 +125,7 @@ module.exports = (app, db) => {
     }).then(Surveys => res.json(Surveys)).catch(next)
   })
   app.get('/admin/survey/:surveyId', authenticateAdmin, (req, res, next) => {
-    return db.Survey.findOne({
+    return db.Survey.unscoped().findOne({
       where: {
         surveyId: req.params.surveyId,
         ownerId: res.locals.decoded.userId
@@ -346,7 +363,7 @@ module.exports = (app, db) => {
     }
   }))
   app.delete('/admin/survey/:surveyId/delete', authenticateAdmin, (req, res, next) => {
-    return db.Survey.destroy({
+    return db.Survey.unscoped().destroy({
       where: {
         surveyId: req.params.surveyId,
         ownerId: res.locals.decoded.userId

@@ -26,7 +26,7 @@ module.exports = function(to, subject, html) {
     subject: subject,
     html: html,
   }, function (err, info) {
-    if(err) {
+    if (err) {
       console.log(err)
     } else {
       console.log(info)

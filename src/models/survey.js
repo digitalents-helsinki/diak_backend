@@ -37,6 +37,17 @@ module.exports = (sequelize, DataTypes) => {
     active: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
+    },
+    final: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    }
+  },
+  {
+    defaultScope: {
+      where: {
+        final: true
+      }
     }
   })
 
