@@ -1,33 +1,34 @@
 const jwt = require('jsonwebtoken')
+const { AuthError } = require('./customErrors')
 
-exports.authenticateUser = (req, res, next) => {
-  const token = req.headers['authorization'].substring(7)
-  if (typeof token !== undefined) {
-    jwt.verify(token, process.env.JWT_KEY, (err, decoded) => {
-      if (err) {
-        return res.sendStatus(403)
-      } else {
-        res.locals.decoded = decoded
-        next()
-      }
-    })
+const checkToken = fn => (req, res, next) => {
+  const authHeader = req.headers['authorization']
+  if (authHeader && authHeader.substring) {
+    const token = authHeader.substring(7)
+    jwt.verify(token, process.env.JWT_KEY, fn(req, res, next))
   } else {
-    res.sendStatus(403)
+    return next(new AuthError())
   }
 }
 
-exports.authenticateAdmin = (req, res, next) => {
-  const token = req.headers['authorization'].substring(7)
-  if (typeof token !== undefined) {
-    jwt.verify(token, process.env.JWT_KEY, (err, decoded) => {
-      if (err || decoded.role !== 'admin') {
-        return res.sendStatus(403)
-      } else {
-        res.locals.decoded = decoded
-        return next()
-      } 
-    })
-  } else {
+exports.authenticateUser = checkToken((req, res, next) => (err, decoded) => {
+  if (err) {
+    return next(err)
+  } else if (decoded.role !== 'admin') {
     return res.sendStatus(403)
-  }
-}
+  } else {
+    res.locals.decoded = decoded
+    return next()
+  } 
+})
+
+exports.authenticateAdmin = checkToken((req, res, next) => (err, decoded) => {
+  if (err) {
+    return next(err)
+  } else if (decoded.role !== 'admin') {
+    return res.sendStatus(403)
+  } else {
+    res.locals.decoded = decoded
+    return next()
+  } 
+})

@@ -1,13 +1,14 @@
 const uuidv4 = require('uuid/v4')
 const jwt = require('jsonwebtoken')
 const argon2 = require('argon2')
-const { randomBytes } = require('crypto')
 const wrapAsync = require('../wrapAsync')
+const sendMail = require('../mail')
+const mailUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8080' : 'https://stupefied-joliot-1a8c88.netlify.com'
+const { AuthError } = require('../customErrors')
 
 module.exports = (app, db) => {
   app.post('/signup', wrapAsync(async (req, res) => {
-    const salt = randomBytes(32)
-    const hashedPassword = await argon2.hash(req.body.password, { salt })
+    const hashedPassword = await argon2.hash(req.body.password)
     const [User, created] = await db.User.findOrCreate({
       where: {
         $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', req.body.email)),
@@ -17,16 +18,14 @@ module.exports = (app, db) => {
         userId: uuidv4(),
         role: 'user',
         email: req.body.email,
-        password: hashedPassword,
-        salt: salt.toString('hex')
+        password: hashedPassword
       }
     })
 
     if (!created) {
       await User.update({
         role: 'user',
-        password: hashedPassword,
-        salt: salt.toString('hex')
+        password: hashedPassword
       })
     }
 
@@ -58,6 +57,62 @@ module.exports = (app, db) => {
   app.post('/logout', (req, res) => {
 
   })
+
+  app.post('/recover', wrapAsync(async (req, res, next) => {
+    
+    res.sendStatus(200)
+    
+    const userRecord = await db.User.findOne({ 
+      where: {
+        $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', req.body.email)),
+        password: {
+          [db.Sequelize.Op.ne]: null
+        }
+      },
+      attributes: ['userId', 'password', 'email', 'createdAt'],
+      rejectOnEmpty: true
+    })
+
+    const secret = `${userRecord.password}-${userRecord.createdAt.getTime()}`
+    const token = jwt.sign(
+      {
+        userId: userRecord.userId,
+        exp: Math.floor(Date.now() / 1000) + (15 * 60)
+      },
+      secret
+    )
+
+    sendMail(userRecord.email, 'Salasanan palautus',
+      `Pääset vaihtamaan salasanasi täältä: ${mailUrl}/password/${token}`)
+
+  }))
+
+  app.post('/changepassword', wrapAsync(async (req, res, next) => {
+    const authHeader = req.headers['authorization']
+    if (!authHeader || !authHeader.substring) return next(new AuthError())
+    const token = authHeader.substring(7)
+    const { userId } = jwt.decode(token)
+    const userRecord = await db.User.findOne({ 
+      where: {
+        userId,
+        password: {
+          [db.Sequelize.Op.ne]: null
+        }
+      },
+      attributes: ['userId', 'password', 'email', 'createdAt']
+    })
+    
+    const secret = `${userRecord.password}-${userRecord.createdAt.getTime()}`
+    jwt.verify(token, secret)
+
+    const hashedPassword = await argon2.hash(req.body.password)
+
+    await userRecord.update({
+      password: hashedPassword
+    })
+
+    return res.sendStatus(200)
+  }))
 
   app.post('/supervisor/login', (req, res) => {
     if (

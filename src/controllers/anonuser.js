@@ -1,5 +1,5 @@
 const wrapAsync = require('../wrapAsync')
-const StatusError = require('../statusError')
+const { StatusError } = require('../customErrors')
 
 module.exports = (app, db) => {
   app.get('/anonuser/:entry_hash', wrapAsync(async (req, res, next) => {

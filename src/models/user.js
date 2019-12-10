@@ -20,9 +20,6 @@ module.exports = (sequelize, DataTypes) => {
     password: {
       type: DataTypes.TEXT
     },
-    salt: {
-      type: DataTypes.TEXT
-    },
     post_number: {
       type: DataTypes.TEXT
     },

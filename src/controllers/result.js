@@ -2,7 +2,7 @@ const uuidv4 = require('uuid/v4')
 const sendMail = require('../mail')
 const { authenticateUser, authenticateAdmin } = require('../jwt')
 const wrapAsync = require('../wrapAsync')
-const StatusError = require('../statusError')
+const { StatusError } = require('../customErrors')
 
 module.exports = (app, db) => {
 

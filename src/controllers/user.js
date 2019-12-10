@@ -1,6 +1,6 @@
 const { authenticateUser } = require('../jwt')
 const wrapAsync = require('../wrapAsync')
-const StatusError = require('../statusError')
+const { StatusError } = require('../customErrors')
 
 module.exports = (app, db) => {
   app.get('/user/info', authenticateUser, wrapAsync(async (req, res, next) => {

@@ -35,4 +35,5 @@ apiAdmin(app, db)
 apiAuth(app, db)
 apiUser(app, db)
 apiTestSurvey(app, db)
-errorHandler(app, db)
+
+errorHandler(app)

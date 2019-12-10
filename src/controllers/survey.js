@@ -5,7 +5,7 @@ const mailUrl = process.env.NODE_ENV === 'development' ? 'http://localhost:8080'
 const crypto = require('crypto')
 const { authenticateUser, authenticateAdmin } = require('../jwt')
 const wrapAsync = require('../wrapAsync')
-const StatusError = require('../statusError')
+const { StatusError } = require('../customErrors')
 // const router = express.Router()
 
 const createSurvey = (db, { final } = { final: true }) => wrapAsync(async (req, res, next) => {
