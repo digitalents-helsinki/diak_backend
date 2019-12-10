@@ -25,7 +25,6 @@ module.exports = (app) => {
       return res.sendStatus(404)
     }
     if (err instanceof ValidationError) {
-      console.log(err)
       return res.status(422).send("Validation failed")
     }
     

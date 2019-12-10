@@ -22,7 +22,9 @@ module.exports = (sequelize, DataTypes) => {
   })
 
   AnonUser.associate = models => {
-    AnonUser.belongsTo(models.UserGroup)
+    AnonUser.belongsTo(models.UserGroup, {
+      onDelete: 'CASCADE'
+    })
   }
 
   return AnonUser

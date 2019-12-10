@@ -14,8 +14,6 @@ const checkToken = fn => (req, res, next) => {
 exports.authenticateUser = checkToken((req, res, next) => (err, decoded) => {
   if (err) {
     return next(err)
-  } else if (decoded.role !== 'admin') {
-    return res.sendStatus(403)
   } else {
     res.locals.decoded = decoded
     return next()
@@ -26,7 +24,7 @@ exports.authenticateAdmin = checkToken((req, res, next) => (err, decoded) => {
   if (err) {
     return next(err)
   } else if (decoded.role !== 'admin') {
-    return res.sendStatus(403)
+    return next(new AuthError(true))
   } else {
     res.locals.decoded = decoded
     return next()

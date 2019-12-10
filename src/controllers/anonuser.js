@@ -2,18 +2,21 @@ const wrapAsync = require('../wrapAsync')
 const { StatusError } = require('../customErrors')
 
 module.exports = (app, db) => {
-  app.get('/anonuser/:entry_hash', wrapAsync(async (req, res, next) => {
+  app.post('/anonuser/:entry_hash/info/update', wrapAsync(async (req, res, next) => {
     const AnonUser = await db.AnonUser.findOne({
       where: {
         entry_hash: req.params.entry_hash
-      }
+      },
+      rejectOnEmpty: true
     })
 
-    if (!AnonUser) return next(new StatusError("User does not exist", 404))
+    const alreadyAnswered = await db.Answer.findOne({
+      where: {
+        AnonUserId: AnonUser.id
+      }
+    })
+    if (alreadyAnswered) return next(new StatusError("This one has already answered the survey", 403))
 
-    return res.json(AnonUser)
-  })),
-  app.post('/anonuser/:entry_hash/info/update', wrapAsync(async (req, res, next) => {
     const [rows] = await db.AnonUser.update({
       age: req.body.anonymousinfo.age,
       gender:req.body.anonymousinfo.gender,
@@ -23,8 +26,8 @@ module.exports = (app, db) => {
         entry_hash: req.params.entry_hash
       }
     })
-    if (!rows) return next(new StatusError("Failed to update user information", 500))
+    if (!rows) return next(new StatusError("Failed to update anonymous information", 500))
     
-    return res.send("User information updated")
+    return res.send("Anonymous information updated")
   }))
 }
