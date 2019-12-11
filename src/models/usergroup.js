@@ -11,14 +11,16 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.ARRAY(DataTypes.TEXT),
       validate: {
         caseInsensitivelyUniqueElements(array) {
-          if (array.some((Element, Index) => array.some((element, index) => Index !== index && Element.toLowerCase() === element.toLowerCase()))) {
-            throw new Error("All array elements are not case insensitively unique")
-          }
+          array.forEach((Element, Index) => array.forEach((element, index) => {
+            if (Index !== index && Element.toLowerCase() === element.toLowerCase()) {
+              throw new Error(`${Element} and ${element} are case insensitive duplicates`)
+            }
+          }))
         },
         elementsAreEmail(array) {
           array.forEach(email => {
             if (!sequelize.Validator.isEmail(email)) {
-              throw new Error("All array elements are not emails")
+              throw new Error(`${email} is not a valid email address`)
             }
           })
         }

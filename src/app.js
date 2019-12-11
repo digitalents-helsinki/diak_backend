@@ -5,19 +5,17 @@ const config = require('dotenv')
 config.config()
 
 const db = require('./models')
-const apiAnonUser = require('./controllers/anonuser')
-const apiResult = require('./controllers/result')
-const apiSurvey = require('./controllers/survey')
-const apiAdmin = require('./controllers/admin')
-const apiAuth = require('./controllers/auth')
-const apiUser = require('./controllers/user')
-const apiTestSurvey = require('./controllers/testsurvey')
-const errorHandler = require('./controllers/error')
 
 const app = express()
+
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
-app.use(cors())
+
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN,
+  allowedHeaders: ['Content-type', 'Authorization']
+}
+app.use(cors(corsOptions))
 
 db.sequelize.sync({ force: false })
 .then(() => {
@@ -27,13 +25,10 @@ db.sequelize.sync({ force: false })
   return true
 })
 
-apiAnonUser(app, db)
-apiUser(app, db)
-apiResult(app, db)
-apiSurvey(app, db)
-apiAdmin(app, db)
-apiAuth(app, db)
-apiUser(app, db)
-apiTestSurvey(app, db)
+app.use('/supervisor', require('./router/supervisor'))
+app.use('/admin', require('./router/admin'))
+app.use('/auth', require('./router/auth'))
+app.use('/anon', require('./router/anon'))
+app.use(require('./router/common'))
 
-errorHandler(app)
+app.use(require('./controllers/error/error'))
