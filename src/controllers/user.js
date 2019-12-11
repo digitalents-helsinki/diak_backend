@@ -18,7 +18,7 @@ module.exports = (app, db) => {
     const [rows] = await db.User.update({
       name: req.body.personalInfo.name,
       post_number: req.body.personalInfo.postNumber,
-      birth_date: req.body.personalInfo.birthDate,
+      age: req.body.personalInfo.age,
       gender:req.body.personalInfo.gender,
       phone_number: req.body.personalInfo.phoneNumber
     },
