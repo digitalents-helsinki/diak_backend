@@ -7,7 +7,7 @@ module.exports = wrapAsync(async (req, res, next) => {
     include: [db.Question]
   })
 
-  if (!Survey) return next(new StatusError("Survey does not exist", 400))
+  if (!Survey) return next(new StatusError("Survey does not exist", 404))
 
   const Group = await db.UserGroup.findOne({
     where: {

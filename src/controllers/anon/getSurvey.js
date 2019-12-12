@@ -4,15 +4,17 @@ const { StatusError } = require('../../utils/customErrors')
 
 module.exports = wrapAsync(async (req, res, next) => {
   const Survey = await db.Survey.findByPk(req.params.id, {
-    include: [db.Question]
+    include: [db.Question],
+    rejectOnEmpty: true
   })
 
-  if (!Survey) return next(new StatusError("Survey does not exist", 400))
+  if (!Survey) return next(new StatusError("Survey does not exist", 404))
 
   const Group = await db.UserGroup.findOne({
     where: {
       SurveySurveyId: req.params.id
-    }
+    },
+    rejectOnEmpty: true
   })
 
   const AnonUser = await db.AnonUser.findOne({

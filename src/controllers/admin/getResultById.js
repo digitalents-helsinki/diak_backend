@@ -23,7 +23,7 @@ module.exports = (req, res, next) => {
         },
         include: [{
           model: db.User,
-          attributes: ['userId', 'post_number', 'name', 'birth_date', 'gender']
+          attributes: ['userId', 'post_number', 'name', 'age', 'gender']
         }, 
         {
           model: db.AnonUser,

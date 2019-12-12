@@ -12,7 +12,8 @@ module.exports = wrapAsync(async (req, res, next) => {
 
   const alreadyAnswered = await db.Answer.findOne({
     where: {
-      AnonUserId: AnonUser.id
+      AnonUserId: AnonUser.id,
+      final: true
     }
   })
   if (alreadyAnswered) return next(new StatusError("This one has already answered the survey", 403))

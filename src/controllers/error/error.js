@@ -25,7 +25,7 @@ module.exports = (err, req, res, next) => {
     case UniqueConstraintError:
       return res.status(409).json(Object.values(err.fields))
     case ValidationError:
-      return res.status(422).json(`${err.errors.map(error => error.value)}`)
+      return res.status(422).json(err.errors.map(error => error.value))
     default:
       return res.sendStatus(500)
   }
