@@ -1,6 +1,6 @@
 const db = require('../../models')
-const wrapAsync = require('../../wrapAsync')
-const { StatusError } = require('../../customErrors')
+const wrapAsync = require('../common/wrapAsync')
+const { StatusError } = require('../../utils/customErrors')
 
 module.exports = wrapAsync(async (req, res, next) => {
   const AnonUser = await db.AnonUser.findOne({

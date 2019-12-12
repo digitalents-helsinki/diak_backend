@@ -4,7 +4,7 @@ module.exports = (req, res, next) => {
   return db.Survey.findOne({
     where: {
       surveyId: req.params.id,
-      ownerId: res.locals.decoded.userId
+      ownerId: res.locals.decoded.sub
     },
     rejectOnEmpty: true,
     include: [{

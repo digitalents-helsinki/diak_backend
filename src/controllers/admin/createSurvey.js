@@ -1,8 +1,8 @@
-const wrapAsync = require('../../wrapAsync')
+const wrapAsync = require('../common/wrapAsync')
 const db = require('../../models')
 const uuidv4 = require('uuid/v4')
 const crypto = require('crypto')
-const sendMail = require('../../mail')
+const sendMail = require('../../utils/mail')
 
 module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
 
@@ -15,7 +15,7 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
     await db.Survey.destroy({
       where: {
         surveyId: req.body.surveyId,
-        ownerId: res.locals.decoded.userId,
+        ownerId: res.locals.decoded.sub,
         final: false
       },
       limit: 1,
@@ -24,7 +24,7 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
 
     const Survey = await db.Survey.create({
       surveyId: req.body.surveyId || uuidv4(),
-      ownerId: res.locals.decoded.userId,
+      ownerId: res.locals.decoded.sub,
       name: req.body.id,
       message: req.body.message,
       anon: req.body.anon,

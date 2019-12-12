@@ -1,4 +1,4 @@
-const wrapAsync = require('../../wrapAsync')
+const wrapAsync = require('./wrapAsync')
 const argon2 = require('argon2')
 const uuidv4 = require('uuid/v4')
 const db = require('../../models')

@@ -1,17 +1,16 @@
 const db = require('../../models')
-const wrapAsync = require('../../wrapAsync')
-const { StatusError } = require('../../customErrors')
-const sendMail = require('../../mail')
+const wrapAsync = require('../common/wrapAsync')
+const { StatusError } = require('../../utils/customErrors')
+const sendMail = require('../../utils/mail')
 
 module.exports = wrapAsync(async (req, res, next) => {
     
   const User = await db.User.findOne({
     where: {
-      userId: res.locals.decoded.userId
-    }
+      userId: res.locals.decoded.sub
+    },
+    rejectOnEmpty: true
   })
-
-  if (!User) return next(new StatusError("User does not exist", 401))
 
   const QuestionsAnswers = await db.Question.findAll({
     where: {

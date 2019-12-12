@@ -1,9 +1,9 @@
-const wrapAsync = require('../../wrapAsync')
+const wrapAsync = require('../common/wrapAsync')
 const db = require('../../models')
 const uuidv4 = require('uuid/v4')
 const crypto = require('crypto')
-const sendMail = require('../../mail')
-const { StatusError } = require('../../customErrors')
+const sendMail = require('../../utils/mail')
+const { StatusError } = require('../../utils/customErrors')
 
 module.exports = wrapAsync(async (req, res, next) => {
     
@@ -16,7 +16,7 @@ module.exports = wrapAsync(async (req, res, next) => {
     const Survey = await db.Survey.findOne({
       where: {
         surveyId: req.params.surveyId,
-        ownerId: res.locals.decoded.userId
+        ownerId: res.locals.decoded.sub
       },
       lock: true,
       rejectOnEmpty: true,

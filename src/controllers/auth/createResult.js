@@ -1,10 +1,9 @@
-const wrapAsync = require('../../wrapAsync')
+const wrapAsync = require('../common/wrapAsync')
 const db = require('../../models')
 const uuidv4 = require('uuid/v4')
-const { StatusError } = require('../../customErrors')
+const { StatusError } = require('../../utils/customErrors')
 
-module.exports = wrapAsync(async (req, res) => {
-
+module.exports = ({ final }) => wrapAsync(async (req, res) => {
   let transaction;
 
   try {
@@ -28,7 +27,7 @@ module.exports = wrapAsync(async (req, res) => {
 
     const [User] = await Group.getUsers({
       where: {
-        userId: res.locals.decoded.userId
+        userId: res.locals.decoded.sub
       },
       attributes: ["userId"],
       lock: true,
@@ -48,7 +47,7 @@ module.exports = wrapAsync(async (req, res) => {
 
     if (alreadyAnswered) throw new StatusError("User has already answered the survey", 403)
 
-    await Survey.increment('responses', {transaction})
+    if (final) await Survey.increment('responses', {transaction})
     
     const currentTime = Date.now()
 
@@ -63,12 +62,14 @@ module.exports = wrapAsync(async (req, res) => {
         where: {
           SurveySurveyId: Survey.surveyId,
           UserUserId: User.userId,
-          QuestionQuestionId: answer.id
+          QuestionQuestionId: answer.id,
+          final: false
         },
         defaults: {
           answerId: uuidv4(),
           value: answer.val,
-          description: answer.desc
+          description: answer.desc,
+          final
         },
         lock: true,
         transaction
@@ -83,7 +84,7 @@ module.exports = wrapAsync(async (req, res) => {
         await savedAnswer.update({
           value: answer.val,
           description: answer.desc,
-          final: true
+          final
         }, {transaction})
       }
     }

@@ -1,7 +1,7 @@
 const uuidv4 = require('uuid/v4')
 const argon2 = require('argon2')
-const sendMail = require('../../mail')
-const wrapAsync = require('../../wrapAsync')
+const sendMail = require('../../utils/mail')
+const wrapAsync = require('../common/wrapAsync')
 const db = require('../../models')
 
 module.exports = wrapAsync(async (req, res) => {

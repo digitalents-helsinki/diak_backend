@@ -1,5 +1,5 @@
-const { StatusError, AuthError } = require('../../customErrors')
-const { JsonWebTokenError } = require('jsonwebtoken')
+const { StatusError, AuthError } = require('../../utils/customErrors')
+const { JsonWebTokenError, TokenExpiredError } = require('jsonwebtoken')
 const { EmptyResultError, ValidationError, UniqueConstraintError } = require('sequelize')
 
 module.exports = (err, req, res, next) => {
@@ -18,6 +18,7 @@ module.exports = (err, req, res, next) => {
         return res.append('WWW-Authenticate', 'Bearer').status(401).send(err.message)
       }
     case JsonWebTokenError:
+    case TokenExpiredError:
       return res.status(401).send(err.message)
     case EmptyResultError:
       return res.sendStatus(404)

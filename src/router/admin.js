@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 
-const { authenticateAdmin } = require('../jwt')
+const { authenticate, authorizeAdmin } = require('../controllers/common/jwt')
 const createSurvey = require('../controllers/admin/createSurvey')
 const getSurveys = require('../controllers/admin/getSurveys')
 const getSurveyById = require('../controllers/admin/getSurveyById')
@@ -10,7 +10,7 @@ const deleteSurvey = require('../controllers/admin/deleteSurvey')
 const archiveSurvey = require('../controllers/admin/archiveSurvey')
 const getResultById = require('../controllers/admin/getResultById')
 
-router.use(authenticateAdmin)
+router.use(authenticate, authorizeAdmin)
 
 router.post('/survey/create', createSurvey({ final: true }))
 router.put('/survey/save', createSurvey({ final: false }))

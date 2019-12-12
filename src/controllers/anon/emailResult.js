@@ -1,7 +1,7 @@
 const db = require('../../models')
-const wrapAsync = require('../../wrapAsync')
-const { StatusError } = require('../../customErrors')
-const sendMail = require('../../mail')
+const wrapAsync = require('../common/wrapAsync')
+const { StatusError } = require('../../utils/customErrors')
+const sendMail = require('../../utils/mail')
 
 module.exports = wrapAsync(async (req, res, next) => {
 
@@ -9,10 +9,9 @@ module.exports = wrapAsync(async (req, res, next) => {
     where: {
       entry_hash: req.body.anonId
     },
-    attributes: ["id"]
+    attributes: ["id"],
+    rejectOnEmpty: true
   })
-
-  if (!AnonUser) return next(new StatusError("User does not exist", 401))
 
   const QuestionsAnswers = await db.Question.findAll({
     where: {

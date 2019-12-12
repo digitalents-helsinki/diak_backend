@@ -1,27 +1,37 @@
-const wrapAsync = require('../../wrapAsync')
+const wrapAsync = require('../common/wrapAsync')
 const uuidv4 = require('uuid/v4')
 const db = require('../../models')
-const { StatusError } = require('../../customErrors')
+const { StatusError } = require('../../utils/customErrors')
 
-module.exports = wrapAsync(async (req, res) => {
+module.exports = ({ final }) => wrapAsync(async (req, res) => {
 
   let transaction;
 
   try {
     transaction = await db.sequelize.transaction();
 
-    const anonuser = await db.AnonUser.findOne({
-      where: {
-        entry_hash: req.body.anonId
-      },
-      attributes: ["id"],
+    const survey = await db.Survey.findByPk(req.body.surveyId, {
+      attributes: ["surveyId", "active", "startDate", "endDate"],
       lock: true,
       rejectOnEmpty: true,
       transaction
     })
 
-    const survey = await db.Survey.findByPk(req.body.surveyId, {
-      attributes: ["surveyId", "active", "startDate", "endDate"],
+    const group = await db.UserGroup.findOne({
+      where: {
+        SurveySurveyId: survey.surveyId
+      },
+      lock: true,
+      rejectOnEmpty: true,
+      transaction
+    })
+    
+    const anonuser = await db.AnonUser.findOne({
+      where: {
+        entry_hash: req.body.anonId,
+        UserGroupId: group.id
+      },
+      attributes: ["id"],
       lock: true,
       rejectOnEmpty: true,
       transaction
@@ -39,7 +49,7 @@ module.exports = wrapAsync(async (req, res) => {
 
     if (alreadyAnswered) throw new StatusError("User has already answered the survey", 403)
 
-    await survey.increment('responses', {transaction})
+    if (final) await survey.increment('responses', {transaction})
     
     const currentTime = Date.now()
 
@@ -53,12 +63,14 @@ module.exports = wrapAsync(async (req, res) => {
         where: {
           SurveySurveyId: survey.surveyId,
           AnonUserId: anonuser.id,
-          QuestionQuestionId: answer.id
+          QuestionQuestionId: answer.id,
+          final: false
         },
         defaults: {
           answerId: uuidv4(),
           value: answer.val,
-          description: answer.desc
+          description: answer.desc,
+          final
         },
         lock: true,
         transaction
@@ -73,7 +85,7 @@ module.exports = wrapAsync(async (req, res) => {
         await savedAnswer.update({
           value: answer.val,
           description: answer.desc,
-          final: true
+          final
         }, {transaction})
       }
     }

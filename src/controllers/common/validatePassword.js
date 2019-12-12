@@ -1,5 +1,5 @@
 const db = require('../../models')
-const { StatusError } = require('../../customErrors')
+const { StatusError } = require('../../utils/customErrors')
 
 module.exports = (req, res, next) => {
   if (db.sequelize.Validator.isLength(req.body.password, { min: 8 })) {

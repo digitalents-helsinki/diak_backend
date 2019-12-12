@@ -1,6 +1,6 @@
-const wrapAsync = require('../../wrapAsync')
+const wrapAsync = require('../common/wrapAsync')
 const db = require('../../models')
-const { StatusError } = require('../../customErrors')
+const { StatusError } = require('../../utils/customErrors')
 
 module.exports = wrapAsync(async (req, res, next) => {
   const [rows] = await db.User.update({
@@ -12,7 +12,7 @@ module.exports = wrapAsync(async (req, res, next) => {
   },
   {
     where: {
-      userId: res.locals.decoded.userId
+      userId: res.locals.decoded.sub
     }
   })
   if (!rows) return next(new StatusError("Failed to update user information", 500))

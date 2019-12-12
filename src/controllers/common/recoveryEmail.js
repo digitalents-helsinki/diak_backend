@@ -1,7 +1,7 @@
-const wrapAsync = require('../../wrapAsync')
-const sendMail = require('../../mail')
+const wrapAsync = require('./wrapAsync')
+const sendMail = require('../../utils/mail')
 const db = require('../../models')
-const jwt = require('jsonwebtoken')
+const generateToken = require('../../utils/generateToken')
 
 module.exports = wrapAsync(async (req, res, next) => {
     
@@ -19,13 +19,10 @@ module.exports = wrapAsync(async (req, res, next) => {
   })
 
   const secret = `${userRecord.password}-${userRecord.createdAt.getTime()}`
-  const token = jwt.sign(
-    {
-      userId: userRecord.userId,
-      exp: Math.floor(Date.now() / 1000) + (15 * 60)
-    },
-    secret
-  )
+  const token = generateToken({
+    sub: userRecord.userId,
+    aud: 'recover'
+  }, secret)
 
   sendMail(userRecord.email, 'Salasanan palautus',
     `Pääset vaihtamaan salasanasi täältä: ${process.env.FRONTEND_URL}/password/${token}`)

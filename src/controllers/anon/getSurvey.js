@@ -1,6 +1,6 @@
-const wrapAsync = require('../../wrapAsync')
+const wrapAsync = require('../common/wrapAsync')
 const db = require('../../models')
-const { StatusError } = require('../../customErrors') 
+const { StatusError } = require('../../utils/customErrors')
 
 module.exports = wrapAsync(async (req, res, next) => {
   const Survey = await db.Survey.findByPk(req.params.id, {
@@ -19,10 +19,9 @@ module.exports = wrapAsync(async (req, res, next) => {
     where: {
       entry_hash: req.params.entry_hash,
       UserGroupId: Group.id
-    }
+    },
+    rejectOnEmpty: true
   })
-
-  if (!AnonUser) return next(new StatusError("User does not exist or does not have access to the survey", 401))
 
   const currentTime = Date.now()
 

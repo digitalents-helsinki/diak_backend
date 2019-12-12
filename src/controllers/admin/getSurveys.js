@@ -3,7 +3,7 @@ const db = require('../../models')
 module.exports = (req, res, next) => {
   return db.Survey.unscoped().findAll({
     where: {
-      ownerId: res.locals.decoded.userId
+      ownerId: res.locals.decoded.sub
     },
     include: {
       model: db.UserGroup,

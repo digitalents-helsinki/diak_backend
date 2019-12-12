@@ -1,7 +1,7 @@
-const wrapAsync = require('../../wrapAsync')
+const wrapAsync = require('./wrapAsync')
 const argon2 = require('argon2')
 const db = require('../../models')
-const jwt = require('jsonwebtoken')
+const generateToken = require('../../utils/generateToken')
 
 module.exports = wrapAsync(async (req, res) => {
   const userRecord = await db.User.findOne({ 
@@ -21,14 +21,11 @@ module.exports = wrapAsync(async (req, res) => {
     const today = new Date()
     const exp = new Date(today)
     exp.setDate(today.getDate() + 7)
-    const token = jwt.sign(
-      {
-        role: userRecord.role,
-        userId: userRecord.userId,
-        exp: exp.getTime() / 100
-      },
-      process.env.JWT_KEY
-    )
+    const token = generateToken({
+      sub: userRecord.userId,
+      aud: 'auth',
+      role: userRecord.role
+    })
     res.json({ success: true, userId: userRecord.userId, token: token, role: userRecord.role })
   } else {
     res.json({success: false})

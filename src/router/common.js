@@ -8,7 +8,6 @@ const recoveryEmail = require('../controllers/common/recoveryEmail')
 const changePassword = require('../controllers/common/changePassword')
 
 router.post('/signup', validatePassword, signUp)
-
 router.post('/signin', signIn)
 
 /* router.post('/signout', ) */

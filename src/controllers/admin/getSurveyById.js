@@ -4,7 +4,7 @@ module.exports = (req, res, next) => {
     return db.Survey.unscoped().findOne({
       where: {
         surveyId: req.params.surveyId,
-        ownerId: res.locals.decoded.userId
+        ownerId: res.locals.decoded.sub
       },
       include: [{
         model: db.Question,
