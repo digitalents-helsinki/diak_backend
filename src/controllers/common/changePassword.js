@@ -2,6 +2,7 @@ const wrapAsync = require('./wrapAsync')
 const argon2 = require('argon2')
 const db = require('../../models')
 const jwt = require('jsonwebtoken')
+const crypto = require('crypto')
 const { AuthError } = require('../../utils/customErrors')
 
 module.exports = wrapAsync(async (req, res, next) => {
@@ -16,10 +17,11 @@ module.exports = wrapAsync(async (req, res, next) => {
         [db.Sequelize.Op.ne]: null
       }
     },
-    attributes: ['userId', 'password', 'email', 'createdAt']
+    attributes: ['userId', 'password', 'createdAt']
   })
   
-  const secret = `${userRecord.password}-${userRecord.createdAt.getTime()}`
+  const secret = crypto.createHmac('sha256', process.env.JWT_KEY).update(`${userRecord.password}-${userRecord.createdAt.getTime()}`).digest('hex')
+
   jwt.verify(token, secret, { audience: 'recover' })
 
   const hashedPassword = await argon2.hash(req.body.password)

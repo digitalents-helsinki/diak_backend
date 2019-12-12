@@ -2,6 +2,7 @@ const wrapAsync = require('./wrapAsync')
 const sendMail = require('../../utils/mail')
 const db = require('../../models')
 const generateToken = require('../../utils/generateToken')
+const crypto = require('crypto')
 
 module.exports = wrapAsync(async (req, res, next) => {
     
@@ -18,7 +19,8 @@ module.exports = wrapAsync(async (req, res, next) => {
     rejectOnEmpty: true
   })
 
-  const secret = `${userRecord.password}-${userRecord.createdAt.getTime()}`
+  const secret = crypto.createHmac('sha256', process.env.JWT_KEY).update(`${userRecord.password}-${userRecord.createdAt.getTime()}`).digest('hex')
+
   const token = generateToken({
     sub: userRecord.userId,
     aud: 'recover'
