@@ -26,8 +26,8 @@ module.exports = (sequelize, DataTypes) => {
     phone_number: {
       type: DataTypes.TEXT
     },
-    birth_date: {
-      type: DataTypes.DATE
+    age: {
+      type: DataTypes.INTEGER
     },
     gender: {
       type: DataTypes.TEXT
