@@ -1,5 +1,8 @@
 const express = require('express')
 const router = express.Router()
+const morgan = require('morgan')
+
+morgan.token('sub', (req, res) => res.locals.decoded.sub)
 
 const { authenticate, authorizeAdmin } = require('../controllers/common/jwt')
 const createSurvey = require('../controllers/admin/createSurvey')
@@ -10,7 +13,9 @@ const deleteSurvey = require('../controllers/admin/deleteSurvey')
 const archiveSurvey = require('../controllers/admin/archiveSurvey')
 const getResultById = require('../controllers/admin/getResultById')
 
-router.use(authenticate, authorizeAdmin)
+router.use(authenticate)
+router.use(authorizeAdmin)
+router.use(morgan(':url :sub :remote-addr'))
 
 router.post('/survey/create', createSurvey({ final: true }))
 router.put('/survey/save', createSurvey({ final: false }))

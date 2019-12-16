@@ -19,7 +19,7 @@ module.exports = wrapAsync(async (req, res, next) => {
     rejectOnEmpty: true
   })
 
-  const secret = crypto.createHmac('sha256', process.env.JWT_KEY).update(`${userRecord.password}-${userRecord.createdAt.getTime()}`).digest('hex')
+  const secret = crypto.createHmac('sha256', process.env.HMAC_KEY).update(`${userRecord.password}-${userRecord.createdAt.getTime()}`).digest('hex')
 
   const token = generateToken({
     sub: userRecord.userId,
