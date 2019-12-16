@@ -1,4 +1,4 @@
-const wrapAsync = require('./wrapAsync')
+const wrapAsync = require('../../utils/wrapAsync')
 const argon2 = require('argon2')
 const db = require('../../models')
 const jwt = require('jsonwebtoken')

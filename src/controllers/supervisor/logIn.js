@@ -1,5 +1,5 @@
 const argon2 = require('argon2')
-const wrapAsync = require('../common/wrapAsync')
+const wrapAsync = require('../../utils/wrapAsync')
 const jwt = require('jsonwebtoken')
 
 module.exports = wrapAsync(async (req, res, next) => {

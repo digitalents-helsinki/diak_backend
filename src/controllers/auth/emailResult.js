@@ -1,5 +1,5 @@
 const db = require('../../models')
-const wrapAsync = require('../common/wrapAsync')
+const wrapAsync = require('../../utils/wrapAsync')
 const { StatusError } = require('../../utils/customErrors')
 const sendMail = require('../../utils/mail')
 

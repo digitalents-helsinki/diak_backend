@@ -1,4 +1,4 @@
-const wrapAsync = require('./wrapAsync')
+const wrapAsync = require('../../utils/wrapAsync')
 const sendMail = require('../../utils/mail')
 const db = require('../../models')
 const generateToken = require('../../utils/generateToken')

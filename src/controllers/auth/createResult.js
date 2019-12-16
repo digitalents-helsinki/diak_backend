@@ -1,4 +1,4 @@
-const wrapAsync = require('../common/wrapAsync')
+const wrapAsync = require('../../utils/wrapAsync')
 const db = require('../../models')
 const uuidv4 = require('uuid/v4')
 const { StatusError } = require('../../utils/customErrors')

@@ -1,4 +1,4 @@
-const wrapAsync = require('../common/wrapAsync')
+const wrapAsync = require('../../utils/wrapAsync')
 const db = require('../../models')
 
 module.exports = wrapAsync(async (req, res, next) => {
