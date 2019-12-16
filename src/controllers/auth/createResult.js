@@ -41,6 +41,7 @@ module.exports = ({ final }) => wrapAsync(async (req, res) => {
         SurveySurveyId: Survey.surveyId,
         UserUserId: User.userId
       },
+      attributes: ['answerId'],
       lock: true,
       transaction
     })

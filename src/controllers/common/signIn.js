@@ -10,7 +10,8 @@ module.exports = wrapAsync(async (req, res) => {
       password: {
         [db.Sequelize.Op.ne]: null
       }
-    }
+    },
+    attributes: ['userId', 'role', 'password']
   })
   if (!userRecord) {
     res.json({success: false})

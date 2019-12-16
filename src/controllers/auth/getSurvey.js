@@ -19,6 +19,7 @@ module.exports = wrapAsync(async (req, res, next) => {
     where: {
       userId: res.locals.decoded.sub
     },
+    attributes: ['userId'],
     rejectOnEmpty: true
   })
 
@@ -36,7 +37,8 @@ module.exports = wrapAsync(async (req, res, next) => {
       final: true,
       SurveySurveyId: req.params.id,
       UserUserId: User.userId
-    }
+    },
+    attributes: ['answerId']
   })
 
   if (alreadyAnswered) return res.redirect(303, `/auth/result/${req.params.id}`)

@@ -13,7 +13,8 @@ module.exports = wrapAsync(async (req, res, next) => {
   {
     where: {
       userId: res.locals.decoded.sub
-    }
+    },
+    limit: 1
   })
   if (!rows) return next(new StatusError("Failed to update user information", 500))
   

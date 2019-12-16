@@ -9,6 +9,7 @@ module.exports = wrapAsync(async (req, res, next) => {
     where: {
       userId: res.locals.decoded.sub
     },
+    attributes: ['userId'],
     rejectOnEmpty: true
   })
 

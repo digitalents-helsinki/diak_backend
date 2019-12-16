@@ -116,7 +116,8 @@ module.exports = wrapAsync(async (req, res, next) => {
       include: {
         model: db.UserGroup,
         include: {
-          model: db.User
+          model: db.User,
+          attributes: ['email']
         }
       }
     })

@@ -76,6 +76,7 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
             userId: uuidv4(),
             email: to
           },
+          attributes: ['userId'],
           lock: true,
           transaction
         })

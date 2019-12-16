@@ -50,7 +50,7 @@ module.exports = wrapAsync(async (req, res, next) => {
     group: ['Question.questionId']
   })
 
-  return res.status(200).json({
+  return res.json({
     Result,
     Averages
   })

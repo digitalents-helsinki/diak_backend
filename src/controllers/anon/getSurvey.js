@@ -22,6 +22,7 @@ module.exports = wrapAsync(async (req, res, next) => {
       entry_hash: req.params.entry_hash,
       UserGroupId: Group.id
     },
+    attributes: ['id'],
     rejectOnEmpty: true
   })
 
@@ -37,7 +38,8 @@ module.exports = wrapAsync(async (req, res, next) => {
       final: true,
       SurveySurveyId: req.params.id,
       AnonUserId: AnonUser.id
-    }
+    },
+    attributes: ['answerId']
   })
 
   if (alreadyAnswered) return res.redirect(303, `/anon/result/${req.params.id}/${req.params.entry_hash}`)
