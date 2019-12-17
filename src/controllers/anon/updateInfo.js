@@ -15,7 +15,7 @@ module.exports = wrapAsync(async (req, res, next) => {
       AnonUserId: AnonUser.id,
       final: true
     },
-    attributes: ['id']
+    attributes: ['answerId']
   })
   if (alreadyAnswered) return next(new StatusError("This one has already answered the survey", 403))
 

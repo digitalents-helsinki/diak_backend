@@ -1,5 +1,4 @@
 const jwt = require('jsonwebtoken')
-const { AuthError } = require('../../utils/customErrors')
 
 module.exports = (req, res, next) => {
   const authHeader = req.headers['authorization']
@@ -14,6 +13,6 @@ module.exports = (req, res, next) => {
       }
     })
   } else {
-    return next(new AuthError())
+    return res.sendStatus(403)
   }
 }
