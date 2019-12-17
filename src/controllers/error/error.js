@@ -3,9 +3,7 @@ const { JsonWebTokenError, TokenExpiredError } = require('jsonwebtoken')
 const { EmptyResultError, ValidationError, UniqueConstraintError } = require('sequelize')
 
 module.exports = (err, req, res, next) => {
-  if (res.headersSent) {
-    return next(err)
-  }
+  if (res.headersSent) return next(err) // delegate to default error handler when response has been sent already
   console.error(err.stack)
 
   switch (err.constructor) {
@@ -27,7 +25,12 @@ module.exports = (err, req, res, next) => {
     case ValidationError:
       return res.status(422).json(err.errors.map(error => error.value))
     default:
-      return res.sendStatus(500)
+      switch (true) {
+        case err.code === 'EBADCSRFTOKEN': 
+          return res.status(403).send('Invalid csrf token')
+        default:
+          return res.sendStatus(500)
+      }
   }
 }
 

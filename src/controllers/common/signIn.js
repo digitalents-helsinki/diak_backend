@@ -23,9 +23,8 @@ module.exports = wrapAsync(async (req, res, next) => {
       aud: 'auth',
       role: userRecord.role
     })
-    res.json({ success: true, userId: userRecord.userId, token: token, role: userRecord.role })
+    return res.json({ userId: userRecord.userId, token: token, role: userRecord.role })
   } else {
-    res.json({success: false})
-    throw new Error('Invalid password')
+    return res.sendStatus(403)
   }
 })

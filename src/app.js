@@ -1,6 +1,8 @@
 const express = require('express')
 const helmet = require('helmet')
 const bodyParser = require('body-parser')
+const csrf = require('csurf')
+const cookieParser = require('cookie-parser')
 const cors = require('cors')
 const config = require('dotenv')
 config.config()
@@ -15,9 +17,13 @@ app.use(bodyParser.json())
 
 const corsOptions = {
   origin: process.env.CORS_ORIGIN,
-  allowedHeaders: ['Content-type', 'Authorization']
+  allowedHeaders: ['Content-type', 'Authorization', 'CSRF-Token'],
+  credentials: true
 }
 app.use(cors(corsOptions))
+
+app.use(cookieParser())
+app.use(csrf({ cookie: true }))
 
 db.sequelize.sync({ force: false })
 .then(() => {
