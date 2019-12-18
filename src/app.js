@@ -23,7 +23,14 @@ const corsOptions = {
 app.use(cors(corsOptions))
 
 app.use(cookieParser())
-app.use(csrf({ cookie: true }))
+
+const csrfProtection = csrf({
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production'
+  }
+})
+app.use(csrfProtection)
 
 db.sequelize.sync({ force: false })
 .then(() => {
