@@ -1,7 +1,7 @@
 const wrapAsync = require('../../utils/wrapAsync')
 const sendMail = require('../../utils/mail')
 const db = require('../../models')
-const generateToken = require('../../utils/generateToken')
+const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
 
 module.exports = wrapAsync(async (req, res, next) => {
@@ -21,10 +21,14 @@ module.exports = wrapAsync(async (req, res, next) => {
 
   const secret = crypto.createHmac('sha256', process.env.HMAC_KEY).update(`${userRecord.password}-${userRecord.createdAt.getTime()}`).digest('hex')
 
-  const token = generateToken({
-    sub: userRecord.userId,
-    aud: 'recover'
-  }, secret)
+  const token = jwt.sign(
+    {
+      sub: userRecord.userId,
+      aud: 'recover',
+      exp: Math.floor(Date.now() / 1000) + (15 * 60)
+    },
+    secret
+  )
 
   sendMail(userRecord.email, 'Salasanan palautus',
     `Pääset vaihtamaan salasanasi täältä: ${process.env.FRONTEND_URL}/password/${token}`)

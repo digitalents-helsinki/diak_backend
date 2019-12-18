@@ -1,7 +1,7 @@
 const wrapAsync = require('../../utils/wrapAsync')
 const argon2 = require('argon2')
 const db = require('../../models')
-const generateToken = require('../../utils/generateToken')
+const generateAuthToken = require('../../utils/generateAuthToken')
 
 module.exports = wrapAsync(async (req, res, next) => {
   const userRecord = await db.User.findOne({ 
@@ -20,9 +20,8 @@ module.exports = wrapAsync(async (req, res, next) => {
   const validPassword = await argon2.verify(userRecord.password, req.body.password)
 
   if (validPassword) {
-    const token = generateToken({
+    const token = generateAuthToken({
       sub: userRecord.userId,
-      aud: 'auth',
       role: userRecord.role
     })
     return res.json({ userId: userRecord.userId, token: token, role: userRecord.role })

@@ -1,7 +1,8 @@
 const jwt = require('jsonwebtoken')
 
-module.exports = ({sub, aud, role}, secret = process.env.JWT_KEY) => {
-  const minToExp = aud === 'recover' ? 15 : role === 'admin' ? 60 : 180
+module.exports = ({sub, role}) => {
+  const aud = 'auth'
+  const minToExp =  role === 'admin' ? 60 : 180
   const exp = Math.floor(Date.now() / 1000) + (minToExp * 60)
   const token = jwt.sign(
     {
@@ -10,7 +11,7 @@ module.exports = ({sub, aud, role}, secret = process.env.JWT_KEY) => {
       exp,
       role
     },
-    secret
+    process.env.JWT_KEY
   )
   return token
 }
