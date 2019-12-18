@@ -8,7 +8,7 @@ const getAdmins = require('../controllers/supervisor/getAdmins')
 const createAdmin = require('../controllers/supervisor/createAdmin')
 const deleteAdmin = require('../controllers/supervisor/deleteAdmin')
 
-router.use(morgan())
+router.use(morgan('combined'))
 
 router.post('/login', logIn)
 

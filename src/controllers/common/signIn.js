@@ -13,10 +13,12 @@ module.exports = wrapAsync(async (req, res, next) => {
     },
     attributes: {
       exclude: ['createdAt', 'updatedAt']
-    }
+    },
+    rejectOnEmpty: true // reveal user existence because registration reveals it anyway
   })
 
   const validPassword = await argon2.verify(userRecord.password, req.body.password)
+
   if (validPassword) {
     const token = generateToken({
       sub: userRecord.userId,
@@ -25,6 +27,6 @@ module.exports = wrapAsync(async (req, res, next) => {
     })
     return res.json({ userId: userRecord.userId, token: token, role: userRecord.role })
   } else {
-    return res.sendStatus(403)
+    return res.sendStatus(401)
   }
 })

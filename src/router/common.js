@@ -11,7 +11,7 @@ const changePassword = require('../controllers/common/changePassword')
 router.get('/surf', getCsrfToken)
 
 router.post('/signup', validatePassword, signUp)
-router.post('/signin', signIn)
+router.post('/signin', validatePassword, signIn)
 
 /* router.post('/signout', ) */
 

@@ -15,6 +15,6 @@ module.exports = wrapAsync(async (req, res, next) => {
     )
     return res.json({ token })
   } else {
-    return res.sendStatus(403)
+    return res.sendStatus(401)
   }
 })
