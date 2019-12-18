@@ -6,7 +6,7 @@ const crypto = require('crypto')
 module.exports = wrapAsync(async (req, res, next) => {
   const validPassword = await argon2.verify(process.env.SUPERVISOR_PASSWORD, req.body.password)
   if (validPassword) {
-    const ctx = crypto.randomBytes(48).toString('hex')
+    const ctx = crypto.randomBytes(50).toString('hex')
     const ctxHash = crypto.createHash('sha256').update(ctx).digest('hex')
 
     const secret = crypto.createHmac('sha256', process.env.HMAC_KEY).update(`${process.env.JWT_KEY}${process.env.SUPERVISOR_PASSWORD}`).digest('hex')

@@ -6,7 +6,7 @@ module.exports = ({sub, role}) => {
   const minToExp =  role === 'admin' ? 60 : 180
   const exp = Math.floor(Date.now() / 1000) + (minToExp * 60)
 
-  const ctx = crypto.randomBytes(48).toString('hex')
+  const ctx = crypto.randomBytes(50).toString('hex')
   const ctxHash = crypto.createHash('sha256').update(ctx).digest('hex')
 
   const token = jwt.sign(
