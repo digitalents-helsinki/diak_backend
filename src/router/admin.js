@@ -4,7 +4,8 @@ const morgan = require('morgan')
 
 morgan.token('sub', (req, res) => res.locals.decoded.sub)
 
-const { authenticate, authorizeAdmin } = require('../controllers/common/jwt')
+const authenticate = require('../controllers/common/authenticate')
+const authorizeAdmin = require('../controllers/admin/authorizeAdmin')
 const createSurvey = require('../controllers/admin/createSurvey')
 const getSurveys = require('../controllers/admin/getSurveys')
 const getSurveyById = require('../controllers/admin/getSurveyById')

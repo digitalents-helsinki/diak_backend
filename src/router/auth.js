@@ -1,7 +1,7 @@
 const express = require('express')
 const router = express.Router()
 
-const { authenticate } = require('../controllers/common/jwt')
+const authenticate = require('../controllers/common/authenticate')
 const getSurvey = require('../controllers/auth/getSurvey')
 const getResult = require('../controllers/auth/getResult')
 const createResult = require('../controllers/auth/createResult')

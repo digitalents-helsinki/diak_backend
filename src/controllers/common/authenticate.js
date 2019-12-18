@@ -1,14 +1,13 @@
 const jwt = require('jsonwebtoken')
-const crypto = require('crypto')
 const { AuthError } = require('../../utils/customErrors')
+const crypto = require('crypto')
 
 module.exports = (req, res, next) => {
   const authHeader = req.headers['authorization']
-  const ctx = req.cookies.SuperCtx
+  const ctx = req.cookies.Ctx
   if (authHeader && authHeader.substring && ctx) {
     const token = authHeader.substring(7)
-    const secret = crypto.createHmac('sha256', process.env.HMAC_KEY).update(`${process.env.JWT_KEY}${process.env.SUPERVISOR_PASSWORD}`).digest('hex')
-    const decoded = jwt.verify(token, secret, { audience: 'super' })
+    const decoded = jwt.verify(token, process.env.JWT_KEY, { audience: 'auth' })
 
     const ctxHash = crypto.createHash('sha256').update(ctx).digest('hex')
     const validCtx = crypto.timingSafeEqual(Buffer.from(decoded.ctxHash), Buffer.from(ctxHash))

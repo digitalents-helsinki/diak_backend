@@ -14,15 +14,19 @@ module.exports = wrapAsync(async (req, res, next) => {
     attributes: {
       exclude: ['createdAt', 'updatedAt']
     },
-    rejectOnEmpty: true // reveal user existence because registration reveals it anyway
+    rejectOnEmpty: true // reveal user existence because registration reveals it anyway (and argon2 verify throws an error if there's nothing to compare against)
   })
 
   const validPassword = await argon2.verify(userRecord.password, req.body.password)
 
   if (validPassword) {
-    const token = generateAuthToken({
+    const { token, ctx } = generateAuthToken({
       sub: userRecord.userId,
       role: userRecord.role
+    })
+    res.cookie('Ctx', ctx, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production'
     })
     return res.json({ userId: userRecord.userId, token: token, role: userRecord.role })
   } else {

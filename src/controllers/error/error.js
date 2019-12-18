@@ -10,10 +10,13 @@ module.exports = (err, req, res, next) => {
     case StatusError:
       return res.status(err.status).send(err.message)
     case AuthError:
-      if (err.authenticated) {
-        return res.status(403).send(err.message)
-      } else {
-        return res.append('WWW-Authenticate', 'Bearer').status(401).send(err.message)
+      switch(err.reason) {
+        case 'invalid':
+          return res.append('WWW-Authenticate', 'Bearer').sendStatus(401)
+        case 'ctx':
+          return res.status(401).send("Invalid context")
+        default:
+          return res.sendStatus(403)
       }
     case JsonWebTokenError:
     case TokenExpiredError:

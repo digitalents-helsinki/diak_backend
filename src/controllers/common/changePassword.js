@@ -7,7 +7,7 @@ const { AuthError } = require('../../utils/customErrors')
 
 module.exports = wrapAsync(async (req, res, next) => {
   const authHeader = req.headers['authorization']
-  if (!authHeader || !authHeader.substring) return next(new AuthError())
+  if (!authHeader || !authHeader.substring) return next(new AuthError('invalid'))
   const token = authHeader.substring(7)
   const { sub: userId } = jwt.decode(token)
   const userRecord = await db.User.findOne({ 
@@ -20,7 +20,7 @@ module.exports = wrapAsync(async (req, res, next) => {
     attributes: ['userId', 'password', 'createdAt']
   })
   
-  const secret = crypto.createHmac('sha256', process.env.HMAC_KEY).update(`${userRecord.password}-${userRecord.createdAt.getTime()}`).digest('hex')
+  const secret = crypto.createHmac('sha256', process.env.HMAC_KEY).update(`${userRecord.password}${userRecord.createdAt.getTime()}`).digest('hex')
 
   jwt.verify(token, secret, { audience: 'recover' })
 

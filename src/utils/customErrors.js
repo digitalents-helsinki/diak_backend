@@ -1,5 +1,5 @@
 exports.StatusError = class StatusError extends Error {
-  constructor (message, status = 500) {
+  constructor(message, status = 500) {
     super (message);
 
     Error.captureStackTrace(this, this.constructor)
@@ -9,13 +9,10 @@ exports.StatusError = class StatusError extends Error {
 }
 
 exports.AuthError = class AuthError extends Error {
-  constructor (authenticated = false, type = 'Bearer') {
-    const message = authenticated ? 'Authorization failed' : 'Authentication failed'
-    super (message)
+  constructor(reason) {
+    super(`Auth failed: ${reason}`)
 
     Error.captureStackTrace(this, this.constructor)
     this.name = this.constructor.name
-    this.authenticated = authenticated
-    this.type = type
   }
 }
