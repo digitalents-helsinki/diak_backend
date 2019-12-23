@@ -20,7 +20,7 @@ module.exports = wrapAsync(async (req, res, next) => {
   const validPassword = await argon2.verify(userRecord.password, req.body.password)
 
   if (validPassword) {
-    const { token, ctx } = generateAuthToken({
+    const { token, ctx } = await generateAuthToken({
       sub: userRecord.userId,
       role: userRecord.role
     })
