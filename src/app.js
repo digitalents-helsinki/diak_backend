@@ -33,10 +33,9 @@ app.use(bodyParser.json())
 
 db.sequelize.sync({ force: false })
 .then(() => {
-  app.listen(process.env.PORT, () => {
+  return app.listen(process.env.PORT, () => {
     console.log(`app listening on port ${process.env.PORT}`)
   })
-  return true
 })
 
 app.use('/supervisor', require('./router/supervisor'))

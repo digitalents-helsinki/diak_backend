@@ -14,5 +14,6 @@ exports.AuthError = class AuthError extends Error {
 
     Error.captureStackTrace(this, this.constructor)
     this.name = this.constructor.name
+    this.reason = reason
   }
 }

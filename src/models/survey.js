@@ -41,6 +41,9 @@ module.exports = (sequelize, DataTypes) => {
     final: {
       type: DataTypes.BOOLEAN,
       defaultValue: true
+    },
+    surveyGroupId: {
+      type: DataTypes.UUID
     }
   },
   {

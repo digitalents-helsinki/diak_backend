@@ -3,7 +3,6 @@ const db = require('../../models')
 const uuidv4 = require('uuid/v4')
 const crypto = require('crypto')
 const sendMail = require('../../utils/mail')
-const { StatusError } = require('../../utils/customErrors')
 
 module.exports = wrapAsync(async (req, res, next) => {
     
@@ -16,14 +15,21 @@ module.exports = wrapAsync(async (req, res, next) => {
     const Survey = await db.Survey.findOne({
       where: {
         surveyId: req.params.surveyId,
-        ownerId: res.locals.decoded.sub
+        ownerId: res.locals.decoded.sub,
+        archived: false,
+        [db.Sequelize.Op.or]: [{
+          endDate: null
+        },
+        {
+          endDate: {
+            [db.Sequelize.Op.gt]: new Date()
+          }
+        }]
       },
       lock: true,
       rejectOnEmpty: true,
       transaction
     })
-
-    if (Survey.archived) throw new StatusError("Survey has been archived and thus it cannot be modified", 403)
     
     const Group = await db.UserGroup.findOne({
       where: {
