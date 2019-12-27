@@ -62,7 +62,7 @@ module.exports = wrapAsync(async (req, res, next) => {
         sendMails.push([to, 'Uusi kysely', 
         `Täytä anonyymi kysely ${process.env.FRONTEND_URL}/anon/questionnaire/${Survey.surveyId}/${hash}
         <br><br>
-        ${Survey.message}
+        ${Survey.message || ''}
         `])
       }
     } else {
@@ -92,7 +92,7 @@ module.exports = wrapAsync(async (req, res, next) => {
         sendMails.push([to, 'Uusi kysely',
         `Täytä kysely ${process.env.FRONTEND_URL}/auth/questionnaire/${Survey.surveyId}
         <br><br>
-        ${Survey.message}`])
+        ${Survey.message || ''}`])
       }
       for (const User of removedRespondents) {
         await Group.removeUser(User, {transaction})

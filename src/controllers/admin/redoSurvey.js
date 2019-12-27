@@ -82,7 +82,7 @@ module.exports = wrapAsync(async (req, res, next) => {
         sendMails.push([to, 'Uusi kysely',
         `Täytä anonyymi kysely ${process.env.FRONTEND_URL}/anon/questionnaire/${FollowUpSurvey.surveyId}/${hash}
         <br><br>
-        ${FollowUpSurvey.message}`])
+        ${FollowUpSurvey.message || ''}`])
       } else {
         const [User] = await db.User.findOrCreate({
           where: {
@@ -100,7 +100,7 @@ module.exports = wrapAsync(async (req, res, next) => {
         sendMails.push([to, 'Uusi kysely',
         `Täytä kysely ${process.env.FRONTEND_URL}/auth/questionnaire/${FollowUpSurvey.surveyId}
         <br><br>
-        ${FollowUpSurvey.message}`])
+        ${FollowUpSurvey.message || ''}`])
       }
     }
 

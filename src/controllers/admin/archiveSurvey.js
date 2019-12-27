@@ -6,8 +6,8 @@ module.exports = (req, res, next) => {
     },
     {
       where: {
-      surveyId: req.params.surveyId,
-      ownerId: res.locals.decoded.sub
+        surveyId: req.params.surveyId,
+        ownerId: res.locals.decoded.sub
     },
     limit: 1
   // eslint-disable-next-line promise/no-callback-in-promise
