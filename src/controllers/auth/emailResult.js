@@ -2,6 +2,7 @@ const db = require('../../models')
 const wrapAsync = require('../../utils/wrapAsync')
 const { StatusError } = require('../../utils/customErrors')
 const sendMail = require('../../utils/mail')
+const escape = require('escape-html')
 
 module.exports = wrapAsync(async (req, res, next) => {
     
@@ -23,10 +24,9 @@ module.exports = wrapAsync(async (req, res, next) => {
         final: true,
         UserUserId: User.userId
       }
-    }
+    },
+    rejectOnEmpty: true
   })
-
-  if (!QuestionsAnswers) return next(new StatusError("Result does not exist", 404))
 
   const defaultTitles = {
     health: 'Terveys',
@@ -46,13 +46,13 @@ module.exports = wrapAsync(async (req, res, next) => {
       ${contents}
       <tr>
         <td style="border: 1px solid grey; border-left: none;${idx === 0 ? ' border-top: 1px solid black;' : idx + 1 === QuestionsAnswers.length ? ' border-bottom: none;' : ''} text-align: center;">
-          ${defaultTitles[obj.name] || obj.title}
+          ${escape(defaultTitles[obj.name] || obj.title)}
         </td>
         <td style="border: 1px solid grey;${idx === 0 ? ' border-top: 1px solid black;' : idx + 1 === QuestionsAnswers.length ? ' border-bottom: none;' : ''} text-align: center;">
-          ${obj.Answers[0].value === null ? '' : obj.Answers[0].value}
+          ${escape(obj.Answers[0].value === null ? '' : obj.Answers[0].value)}
         </td>
         <td style="border: 1px solid grey; border-right: none;${idx === 0 ? ' border-top: 1px solid black;' : idx + 1 === QuestionsAnswers.length ? ' border-bottom: none;' : ''} text-align: center;">
-          ${obj.Answers[0].description || ''}
+          ${escape(obj.Answers[0].description || '')}
         </td>
       </tr>
       `
