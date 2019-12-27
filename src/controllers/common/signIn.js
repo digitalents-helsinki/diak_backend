@@ -24,11 +24,10 @@ module.exports = wrapAsync(async (req, res, next) => {
       sub: userRecord.userId,
       role: userRecord.role
     })
-    res.cookie('Ctx', ctx, {
+    return res.cookie('Ctx', ctx, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production'
-    })
-    return res.json({ userId: userRecord.userId, token: token, role: userRecord.role })
+    }).json({ userId: userRecord.userId, token: token, role: userRecord.role })
   } else {
     return res.sendStatus(401)
   }

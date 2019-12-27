@@ -21,11 +21,10 @@ module.exports = wrapAsync(async (req, res, next) => {
       },
       secret
     )
-    res.cookie('SuperCtx', ctx, {
+    return res.cookie('SuperCtx', ctx, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production'
-    })
-    return res.json({ token })
+    }).json({ token })
   } else {
     return res.sendStatus(401)
   }
