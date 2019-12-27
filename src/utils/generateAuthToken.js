@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken')
+const getRandomBytes = require('./getRandomBytes')
 const crypto = require('crypto')
 
 module.exports = async ({sub, role}) => {
@@ -6,7 +7,7 @@ module.exports = async ({sub, role}) => {
   const minToExp =  role === 'admin' ? 60 : 180
   const exp = Math.floor(Date.now() / 1000) + (minToExp * 60)
 
-  const ctx = await new Promise((resolve, reject) => crypto.randomBytes(50, (err, buf) => err ? reject(err) : resolve(buf.toString('hex'))))
+  const ctx = await getRandomBytes(50)
   const ctxHash = crypto.createHash('sha256').update(ctx).digest('hex')
 
   const token = jwt.sign(

@@ -2,12 +2,12 @@ const argon2 = require('argon2')
 const wrapAsync = require('../../utils/wrapAsync')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
+const getRandomBytes = require('../../utils/getRandomBytes')
 
 module.exports = wrapAsync(async (req, res, next) => {
   const validPassword = await argon2.verify(process.env.SUPERVISOR_PASSWORD, req.body.password)
   if (validPassword) {
-    const ctx = await new Promise((resolve, reject) => crypto.randomBytes(50, (err, buf) => err ? reject(err) : resolve(buf.toString('hex'))))
-    //const ctx = crypto.randomBytes(50).toString('hex')
+    const ctx = await getRandomBytes(50)
     const ctxHash = crypto.createHash('sha256').update(ctx).digest('hex')
 
     const secret = crypto.createHmac('sha256', process.env.HMAC_KEY).update(`${process.env.JWT_KEY}${process.env.SUPERVISOR_PASSWORD}`).digest('hex')
