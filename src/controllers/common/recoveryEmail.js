@@ -24,44 +24,38 @@ const limiterRecoveryRateLimit = createRateLimiter({
 
 module.exports = wrapAsync(async (req, res, next) => {
 
-  try {
-    res.sendStatus(200)
+  res.sendStatus(200)
 
-    await limiterRecoveryByIpPerDay.consume(req.ip)
+  await limiterRecoveryByIpPerDay.consume(req.ip).catch(rejRes => { throw new RateLimiterError(rejRes) })
     
-    const userRecord = await db.User.findOne({ 
-      where: {
-        $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', req.body.email)),
-        password: {
-          [db.Sequelize.Op.ne]: null
-        }
-      },
-      attributes: ['userId', 'password', 'email', 'createdAt'],
-      rejectOnEmpty: true
-    })
+  const userRecord = await db.User.findOne({ 
+    where: {
+      $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', req.body.email)),
+      password: {
+        [db.Sequelize.Op.ne]: null
+      }
+    },
+    attributes: ['userId', 'password', 'email', 'createdAt'],
+    rejectOnEmpty: true
+  })
   
-    const secret = crypto.createHmac('sha256', process.env.HMAC_KEY).update(`${userRecord.password}${userRecord.createdAt.getTime()}`).digest('hex')
+  const secret = crypto.createHmac('sha256', process.env.HMAC_KEY).update(`${userRecord.password}${userRecord.createdAt.getTime()}`).digest('hex')
   
-    const token = jwt.sign(
-      {
-        sub: userRecord.userId,
-        aud: 'recover',
-        exp: Math.floor(Date.now() / 1000) + secondsBetweenRecoveries
-      },
-      secret
-    )
+  const token = jwt.sign(
+    {
+      sub: userRecord.userId,
+      aud: 'recover',
+      exp: Math.floor(Date.now() / 1000) + secondsBetweenRecoveries
+    },
+    secret
+  )
 
-    await limiterRecoveryRateLimit.consume(req.body.email.toLowerCase())
+  await limiterRecoveryRateLimit.consume(req.body.email.toLowerCase()).catch(rejRes => { throw new RateLimiterError(rejRes) })
   
-    sendMail(userRecord.email, '3X10D unohtunut salasana',
-      `Pääset vaihtamaan salasanasi alla olevasta linkistä. Linkki toimii ${Math.round(secondsBetweenRecoveries / 60)} minuutin ajan.
-      <br><br>
-      ${process.env.FRONTEND_URL}/password/${token}`
-    )
-
-  } catch(err) {
-    return err instanceof Error ? next(err) : next(new RateLimiterError(err))
-  }
-
+  sendMail(userRecord.email, '3X10D unohtunut salasana',
+    `Pääset vaihtamaan salasanasi alla olevasta linkistä. Linkki toimii ${Math.round(secondsBetweenRecoveries / 60)} minuutin ajan.
+    <br><br>
+    ${process.env.FRONTEND_URL}/password/${token}`
+  )
 
 })

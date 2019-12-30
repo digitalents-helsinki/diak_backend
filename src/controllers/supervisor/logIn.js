@@ -3,8 +3,21 @@ const wrapAsync = require('../../utils/wrapAsync')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
 const getRandomBytes = require('../../utils/getRandomBytes')
+const createRateLimiter = require('../../utils/createRateLimiter')
+const { RateLimiterError } = require('../../utils/customErrors')
+
+const maxWrongAttemptsByIpPerDay = 5
+
+const limiterSlowBruteByIp = createRateLimiter({
+  keyPrefix: 'supervisor_login_fail_ip_per_day',
+  points: maxWrongAttemptsByIpPerDay,
+  duration: 60 * 60 * 24,
+  blockDuration: 60 * 60 * 24 // Block for 1 day, if 5 wrong attempts per day
+})
 
 module.exports = wrapAsync(async (req, res, next) => {
+  await limiterSlowBruteByIp.consume(req.ip).catch(rejRes => { throw new RateLimiterError(rejRes) })
+  
   const validPassword = await argon2.verify(process.env.SUPERVISOR_PASSWORD, req.body.password)
   if (validPassword) {
     const ctx = await getRandomBytes(50)
