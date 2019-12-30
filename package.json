@@ -19,6 +19,7 @@
     "nodemailer": "^6.3.0",
     "nodemon": "^1.19.4",
     "pg": "^7.11.0",
+    "rate-limiter-flexible": "^1.2.2",
     "sequelize": "^5.9.2",
     "uuid": "^3.3.2"
   },

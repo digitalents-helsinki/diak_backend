@@ -1,12 +1,13 @@
-const { StatusError, AuthError } = require('../../utils/customErrors')
+const { StatusError, AuthError, RateLimiterError } = require('../../utils/customErrors')
 const { JsonWebTokenError, TokenExpiredError } = require('jsonwebtoken')
 const { EmptyResultError, ValidationError, UniqueConstraintError } = require('sequelize')
 
 module.exports = (err, req, res, next) => {
   if (res.headersSent) return next(err) // delegate to default error handler when response has been sent already
-  console.error(err.stack)
 
   switch (err.constructor) {
+    case RateLimiterError:
+      return res.append('Retry-After', Math.round(err.rateLimiterRes.msBeforeNext / 1000) || 1).status(429).send(err.message)
     case StatusError:
       return res.status(err.status).send(err.message)
     case AuthError:

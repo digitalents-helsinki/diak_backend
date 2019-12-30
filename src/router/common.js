@@ -13,8 +13,6 @@ router.get('/surf', getCsrfToken)
 router.post('/signup', validatePassword, signUp)
 router.post('/signin', validatePassword, signIn)
 
-/* router.post('/signout', ) */
-
 router.post('/recover', recoveryEmail)
 router.post('/changepassword', validatePassword, changePassword)
 

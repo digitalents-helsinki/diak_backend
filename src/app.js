@@ -5,6 +5,7 @@ const bodyParser = require('body-parser')
 const csrf = require('csurf')
 const cookieParser = require('cookie-parser')
 const cors = require('cors')
+const generalRateLimiter = require('./controllers/common/generalRateLimiter')
 
 const db = require('./models')
 
@@ -18,6 +19,8 @@ const corsOptions = {
   credentials: true
 }
 app.use(cors(corsOptions))
+
+app.use(generalRateLimiter)
 
 app.use(cookieParser())
 
@@ -44,4 +47,5 @@ app.use('/auth', require('./router/auth'))
 app.use('/anon', require('./router/anon'))
 app.use(require('./router/common'))
 
-app.use(require('./controllers/error/error'))
+app.use(require('./controllers/error/errorLogger'))
+app.use(require('./controllers/error/errorResponder'))
