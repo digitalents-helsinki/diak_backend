@@ -1,5 +1,5 @@
 const wrapAsync = require('../../utils/wrapAsync')
-const argon2 = require('argon2')
+const hashPassword = require('../../utils/hashPassword')
 const db = require('../../models')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
@@ -24,12 +24,7 @@ module.exports = wrapAsync(async (req, res, next) => {
 
   jwt.verify(token, secret, { audience: 'recover' })
 
-  const hashedPassword = await argon2.hash(req.body.password, {
-    timeCost: 10,
-    memoryCost: 256000,
-    parallelism: 8,
-    type: argon2.argon2id
-  })
+  const hashedPassword = await hashPassword(req.body.password)
 
   await userRecord.update({
     password: hashedPassword
