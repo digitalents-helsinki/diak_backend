@@ -20,13 +20,13 @@ module.exports = wrapAsync(async (req, res, next) => {
   const InvitedUser = await db.User.findOne({
     where: {
       $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', req.body.email)),
-      password: null
+      password: null,
+      role: 'user'
     }
   })
 
   if (InvitedUser) {
     await InvitedUser.update({
-      role: 'user',
       password: hashedPassword
     })
   } else {
@@ -40,7 +40,7 @@ module.exports = wrapAsync(async (req, res, next) => {
       email: req.body.email,
       password: hashedPassword
     })
-    await Promise.all[UserCreation, limiterRegistrationByIpPerDay.penalty(ipAddr)] // only apply penalty if there was no "invitation" to register
+    await Promise.all([UserCreation, limiterRegistrationByIpPerDay.penalty(ipAddr)]) // only apply penalty if there was no "invitation" to register
   }
   
   return res.status(201).send("Registration succesful")

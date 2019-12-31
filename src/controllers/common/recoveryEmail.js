@@ -55,7 +55,7 @@ module.exports = wrapAsync(async (req, res, next) => {
   sendMail(userRecord.email, '3X10D unohtunut salasana',
     `Pääset vaihtamaan salasanasi alla olevasta linkistä. Linkki toimii ${Math.round(secondsBetweenRecoveries / 60)} minuutin ajan.
     <br><br>
-    ${process.env.FRONTEND_URL}/password/${token}`
+    ${process.env.FRONTEND_URL}/password/change/${token}`
   )
 
 })

@@ -7,6 +7,7 @@ const signUp = require('../controllers/common/signUp')
 const signIn = require('../controllers/common/signIn')
 const recoveryEmail = require('../controllers/common/recoveryEmail')
 const changePassword = require('../controllers/common/changePassword')
+const createPassword = require('../controllers/common/createPassword')
 
 router.get('/surf', getCsrfToken)
 
@@ -15,5 +16,6 @@ router.post('/signin', validatePassword, signIn)
 
 router.post('/recover', recoveryEmail)
 router.post('/changepassword', validatePassword, changePassword)
+router.post('/createpassword', validatePassword, createPassword)
 
 module.exports = router

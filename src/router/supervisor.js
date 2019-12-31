@@ -4,7 +4,6 @@ const morgan = require('morgan')
 
 const logIn = require('../controllers/supervisor/logIn')
 const authorize = require('../controllers/supervisor/authorize')
-const validatePassword = require('../controllers/common/validatePassword')
 const getAdmins = require('../controllers/supervisor/getAdmins')
 const createAdmin = require('../controllers/supervisor/createAdmin')
 const deleteAdmin = require('../controllers/supervisor/deleteAdmin')
@@ -16,7 +15,7 @@ router.post('/login', logIn)
 router.use(authorize)
 
 router.get('/admin/all', getAdmins)
-router.post("/admin/create", validatePassword, createAdmin)
+router.post("/admin/create", createAdmin)
 router.post("/admin/delete", deleteAdmin)
 
 

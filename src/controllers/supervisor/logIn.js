@@ -16,8 +16,9 @@ const limiterSlowBruteByIp = createRateLimiter({
 })
 
 module.exports = wrapAsync(async (req, res, next) => {
-  await limiterSlowBruteByIp.consume(req.ip).catch(rejRes => { throw new RateLimiterError(rejRes) })
-  
+  const resSlowByIp = await limiterSlowBruteByIp.get(req.ip)
+  if (resSlowByIp && resSlowByIp.consumedPoints >= maxWrongAttemptsByIpPerDay) return next(new RateLimiterError(resSlowByIp))
+
   const validPassword = await argon2.verify(process.env.SUPERVISOR_PASSWORD, req.body.password)
   if (validPassword) {
     const ctx = await getRandomBytes(50)
@@ -39,6 +40,7 @@ module.exports = wrapAsync(async (req, res, next) => {
       secure: process.env.NODE_ENV === 'production'
     }).json({ token })
   } else {
+    await limiterSlowBruteByIp.penalty(req.ip)
     return res.sendStatus(401)
   }
 })

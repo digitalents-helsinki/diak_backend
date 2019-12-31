@@ -8,7 +8,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT
     },
     role: {
-      type: DataTypes.TEXT
+      type: DataTypes.TEXT,
+      defaultValue: 'user'
     },
     email: {
       type: DataTypes.TEXT,

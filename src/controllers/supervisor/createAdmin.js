@@ -1,17 +1,50 @@
 const uuidv4 = require('uuid/v4')
-const hashPassword = require('../../utils/hashPassword')
 const sendMail = require('../../utils/mail')
 const wrapAsync = require('../../utils/wrapAsync')
+const crypto = require('crypto')
+const jwt = require('jsonwebtoken')
 const db = require('../../models')
 
 module.exports = wrapAsync(async (req, res) => {
-  const hashedPassword = await hashPassword(req.body.password)
-  await db.User.create({
-    userId: uuidv4(),
-    role: 'admin',
-    email: req.body.username,
-    password: hashedPassword
+  const [Admin, created] = await db.User.findOrCreate({
+    where: {
+      $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', req.body.email))
+    },
+    defaults: {
+      userId: uuidv4(),
+      role: 'admin',
+      email: req.body.email
+    }
   })
-  sendMail(req.body.username, 'Tervetuloa', 'Olet nyt hallinnoitsija.')
-  res.json({success: 'true'})
+  if (created || Admin.password === null) {
+    if (Admin.password === null) {
+      await Admin.update({
+        role: 'admin'
+      })
+    }
+    const secret = crypto.createHmac('sha256', process.env.HMAC_KEY).update(`${process.env.JWT_KEY}${Admin.createdAt.getTime()}`).digest('hex')
+    const token = jwt.sign(
+      {
+        sub: Admin.userId,
+        aud: 'create',
+        exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60
+      },
+      secret
+    )
+    sendMail(req.body.email, 'Tervetuloa 3X10D -hallinnoitsijaksi', 
+      `Sinusta on tehty 3X10D -hallinnoitsija. Pääset asettamaan salasanasi allaolevasta linkistä. Linkki toimii viikon ajan.
+      <br><br>
+      ${process.env.FRONTEND_URL}/password/create/${token}
+      `
+    )
+  } else {
+    await Admin.update({
+      role: 'admin'
+    })
+    sendMail(req.body.email, 'Tervetuloa 3X10D -hallinnoitsijaksi', 
+      `Sinusta on tehty 3X10D -hallinnoitsija. Löydät hallinnoitsijapaneelin kirjautumalla sisään 3X10D -sovellukseen.`
+    )
+  }
+
+  return res.json({success: 'true'})
 })
