@@ -7,6 +7,9 @@ const authorize = require('../controllers/supervisor/authorize')
 const getAdmins = require('../controllers/supervisor/getAdmins')
 const createAdmin = require('../controllers/supervisor/createAdmin')
 const deleteAdmin = require('../controllers/supervisor/deleteAdmin')
+const searchUser = require('../controllers/supervisor/searchUser')
+const deleteUser = require('../controllers/supervisor/deleteUser')
+const deleteByEmail = require('../controllers/supervisor/deleteByEmail')
 
 router.use(morgan('combined'))
 
@@ -16,7 +19,9 @@ router.use(authorize)
 
 router.get('/admin/all', getAdmins)
 router.post("/admin/create", createAdmin)
-router.post("/admin/delete", deleteAdmin)
-
+router.post("/admin/delete", deleteAdmin) // should be called remove
+router.get('/user/search/:searchTerm', searchUser)
+router.delete('/user/:userId/delete', deleteUser)
+router.post('/deletebyemail', deleteByEmail)
 
 module.exports = router
