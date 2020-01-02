@@ -29,6 +29,7 @@
     "debug": "node --inspect src/app.js"
   },
   "devDependencies": {
+    "blocked-at": "^1.2.0",
     "eslint": "^6.4.0"
   }
 }

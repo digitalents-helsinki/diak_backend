@@ -13,6 +13,7 @@ module.exports = wrapAsync(async (req, res, next) => {
   const userRecord = await db.User.findOne({ 
     where: {
       userId,
+      role: 'admin',
       password: null // this is the only thing protecting this endpoint against jwt replay attacks
     },
     attributes: ['userId', 'createdAt']

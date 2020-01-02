@@ -11,7 +11,7 @@ module.exports = wrapAsync(async (req, res, next) => {
     attributes: ['id', 'respondents']
   })
 
-  const removeEmailFromUserGroups = () => new Promise(resolve => {
+  const removeEmailFromUserGroups = () => new Promise(resolve => 
     (function asyncRecurseOverUserGroups(i = 0, promises = []) {
       const currentGroup = UserGroups[Number(i)]
       if (currentGroup) {
@@ -25,9 +25,12 @@ module.exports = wrapAsync(async (req, res, next) => {
         resolve(Promise.all(promises))
       }
     })()
-  })
+  )
 
   await removeEmailFromUserGroups()
 
-  return res.send(`Deleted ${req.body.email} from ${UserGroups.length} respondent groups`)
+  return res.json({
+    email: req.body.email,
+    amount: UserGroups.length
+  })
 })
