@@ -22,9 +22,9 @@ module.exports = wrapAsync(async (req, res, next) => {
   const validPassword = await argon2.verify(process.env.SUPERVISOR_PASSWORD, req.body.password)
   if (validPassword) {
     const ctx = await getRandomBytes(50)
-    const ctxHash = crypto.createHash('sha256').update(ctx).digest('hex')
+    const ctxHash = crypto.createHash('sha512').update(ctx).digest('hex')
 
-    const secret = crypto.createHmac('sha256', process.env.HMAC_KEY).update(`${process.env.JWT_KEY}${process.env.SUPERVISOR_PASSWORD}`).digest('hex')
+    const secret = crypto.createHmac('sha512', process.env.HMAC_KEY).update(`${process.env.JWT_KEY}${process.env.SUPERVISOR_PASSWORD}`).digest('hex')
 
     const token = jwt.sign(
       {

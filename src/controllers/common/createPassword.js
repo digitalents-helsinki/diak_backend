@@ -16,10 +16,11 @@ module.exports = wrapAsync(async (req, res, next) => {
       role: 'admin',
       password: null // this is the only thing protecting this endpoint against jwt replay attacks
     },
-    attributes: ['userId', 'createdAt']
+    attributes: ['userId', 'createdAt'],
+    rejectOnEmpty: true
   })
   
-  const secret = crypto.createHmac('sha256', process.env.HMAC_KEY).update(`${process.env.JWT_KEY}${userRecord.createdAt.getTime()}`).digest('hex')
+  const secret = crypto.createHmac('sha512', process.env.HMAC_KEY).update(`${process.env.JWT_KEY}${userRecord.createdAt.getTime()}`).digest('hex')
 
   jwt.verify(token, secret, { audience: 'create' })
 

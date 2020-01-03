@@ -8,7 +8,7 @@ module.exports = async ({sub, role}) => {
   const exp = Math.floor(Date.now() / 1000) + (minToExp * 60)
 
   const ctx = await getRandomBytes(50)
-  const ctxHash = crypto.createHash('sha256').update(ctx).digest('hex')
+  const ctxHash = crypto.createHash('sha512').update(ctx).digest('hex')
 
   const token = jwt.sign(
     {

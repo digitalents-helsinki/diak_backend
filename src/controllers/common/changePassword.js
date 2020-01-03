@@ -17,10 +17,11 @@ module.exports = wrapAsync(async (req, res, next) => {
         [db.Sequelize.Op.ne]: null
       }
     },
-    attributes: ['userId', 'password', 'createdAt']
+    attributes: ['userId', 'password', 'createdAt'],
+    rejectOnEmpty: true
   })
   
-  const secret = crypto.createHmac('sha256', process.env.HMAC_KEY).update(`${userRecord.password}${userRecord.createdAt.getTime()}`).digest('hex')
+  const secret = crypto.createHmac('sha512', process.env.HMAC_KEY).update(`${userRecord.password}${userRecord.createdAt.getTime()}`).digest('hex')
 
   jwt.verify(token, secret, { audience: 'recover' })
 

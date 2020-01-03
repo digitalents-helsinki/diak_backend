@@ -9,7 +9,7 @@ module.exports = (req, res, next) => {
     const token = authHeader.substring(7)
     const decoded = jwt.verify(token, process.env.JWT_KEY, { audience: 'auth' })
 
-    const ctxHash = crypto.createHash('sha256').update(ctx).digest('hex')
+    const ctxHash = crypto.createHash('sha512').update(ctx).digest('hex')
     const validCtx = crypto.timingSafeEqual(Buffer.from(decoded.ctxHash), Buffer.from(ctxHash))
     if (validCtx) {
       res.locals.decoded = decoded
