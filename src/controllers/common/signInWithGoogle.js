@@ -54,10 +54,12 @@ module.exports = wrapAsync(async (req, res, next) => {
     httpOnly: true,
     secure: process.env.NODE_ENV === 'production'
   }).json({
-    userId: User.userId, 
-    email: User.email,
-    token: token, 
-    role: User.role,
+    authInfo: {
+      userId: User.userId, 
+      email: User.email,
+      token: token, 
+      role: User.role
+    },
     personalInfo: {
       name: User.name,
       post_number: User.post_number,
