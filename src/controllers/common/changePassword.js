@@ -15,7 +15,8 @@ module.exports = wrapAsync(async (req, res, next) => {
       userId,
       password: {
         [db.Sequelize.Op.ne]: null
-      }
+      },
+      external_id: null
     },
     attributes: ['userId', 'password', 'createdAt'],
     rejectOnEmpty: true

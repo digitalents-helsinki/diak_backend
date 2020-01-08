@@ -9,16 +9,16 @@ const transporter = nodemailer.createTransport({
   },
   secureConnection: 'false'
 })
-/*
-transporter.set('oauth2_provision_cb', (user, renew, callback)=> {
+
+/* transporter.set('oauth2_provision_cb', (user, renew, callback)=> {
   let accessToken = userTokens[user]
   if(!accessToken){
     return callback(new Error('Unknown user'))
   } else {
     return callback(null, accessToken)
   }
-})
-*/
+}) */
+
 module.exports = function(to, subject, html) {
   transporter.sendMail({
     from: process.env.EMAIL_USER,
@@ -33,3 +33,12 @@ module.exports = function(to, subject, html) {
     }
   })
 }
+
+
+/* const sgMail = require('@sendgrid/mail')
+sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+
+module.exports = (mail) => {
+  const email = Array.isArray(mail) ? mail.map(mail => ({ from: process.env.EMAIL_USER, ...mail })) : { from: process.env.EMAIL_USER, ...mail }
+  sgMail.send(email).then(res => console.log(res)).catch(err => console.error(err.toString()))
+} */

@@ -33,7 +33,8 @@ module.exports = wrapAsync(async (req, res, next) => {
       $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', req.body.email)),
       password: {
         [db.Sequelize.Op.ne]: null
-      }
+      },
+      external_id: null
     },
     attributes: ['userId', 'password', 'email', 'createdAt'],
     rejectOnEmpty: true
