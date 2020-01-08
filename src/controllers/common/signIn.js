@@ -63,7 +63,17 @@ module.exports = wrapAsync(async (req, res, next) => {
     return res.cookie('Ctx', ctx, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production'
-    }).json({ userId: userRecord.userId, token: token, role: userRecord.role })
+    }).json({
+      userId: userRecord.userId, 
+      token: token, 
+      role: userRecord.role,
+      name: userRecord.name,
+      email:userRecord.email,
+      post_number:userRecord.post_number,
+      phone_number:userRecord.phone_number,
+      age:userRecord.age,
+      gender:userRecord.gender
+    })
   } else {
     await Promise.all([limiterSlowBruteByIp.penalty(ipAddr), limiterConsecutiveFailsByEmailAndIp.penalty(emailIpKey)]) // apply both penalties
     return res.sendStatus(401)
