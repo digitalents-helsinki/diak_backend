@@ -25,7 +25,9 @@ module.exports = wrapAsync(async (req, res, next) => {
       post_number: null,
       phone_number: null,
       age: null,
-      gender: null
+      gender: null,
+      external_id: null,
+      external_type: null
     },
     {
       validate: false
