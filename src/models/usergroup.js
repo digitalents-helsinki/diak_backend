@@ -9,6 +9,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     respondents: {
       type: DataTypes.ARRAY(DataTypes.TEXT),
+      allowNull: false,
       validate: {
         caseInsensitivelyUniqueElements(array) {
           array.forEach((Element, Index) => array.forEach((element, index) => {

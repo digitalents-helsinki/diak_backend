@@ -50,8 +50,7 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     },
     surveyGroupId: {
-      type: DataTypes.UUID,
-      allowNull: false
+      type: DataTypes.UUID
     }
   },
   {
