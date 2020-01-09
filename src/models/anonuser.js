@@ -7,9 +7,6 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       primaryKey: true
     },
-    /*birth_date: {
-      type: DataTypes.DATE
-    },*/
     age: {
       type: DataTypes.INTEGER
     },
@@ -17,7 +14,8 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT
     },
     entry_hash: {
-      type: DataTypes.TEXT
+      type: DataTypes.TEXT,
+      allowNull: false
     }
   })
 

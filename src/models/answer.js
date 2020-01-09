@@ -9,7 +9,8 @@ module.exports = (sequelize, DataTypes) => {
     },
     final: {
       type: DataTypes.BOOLEAN,
-      defaultValue: true
+      defaultValue: true,
+      allowNull: false
     },
     value: {
       type: DataTypes.INTEGER
