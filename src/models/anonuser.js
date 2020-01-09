@@ -8,10 +8,10 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true
     },
     age: {
-      type: DataTypes.INTEGER
+      type: DataTypes.SMALLINT
     },
     gender: {
-      type: DataTypes.TEXT
+      type: DataTypes.STRING(6)
     },
     entry_hash: {
       type: DataTypes.TEXT,

@@ -13,7 +13,11 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false
     },
     value: {
-      type: DataTypes.INTEGER
+      type: DataTypes.SMALLINT,
+      validate: {
+        min: 0,
+        max: 10
+      }
     },
     description: {
       type: DataTypes.STRING(2000)

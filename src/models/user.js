@@ -23,16 +23,16 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT
     },
     post_number: {
-      type: DataTypes.TEXT
+      type: DataTypes.STRING
     },
     phone_number: {
-      type: DataTypes.TEXT
+      type: DataTypes.STRING
     },
     age: {
-      type: DataTypes.INTEGER
+      type: DataTypes.SMALLINT
     },
     gender: {
-      type: DataTypes.TEXT
+      type: DataTypes.STRING(6)
     },
     external_id: {
       type: DataTypes.TEXT
@@ -41,7 +41,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       validate: {
         allowedProviders(value) {
-          if (!['GOOGLE', 'FACEBOOK'].includes(value)) throw new Error("Provider not allowed")
+          if (!['GOOGLE', 'FACEBOOK'].includes(value)) throw new Error(`Provider ${value} is not allowed`)
         }
       }
     }
