@@ -3,6 +3,8 @@ const db = require('../../models')
 const uuidv4 = require('uuid/v4')
 const crypto = require('crypto')
 const sendMail = require('../../utils/mail')
+const asyncRecurser = require('../../utils/asyncRecurser')
+const { StatusError } = require('../../utils/customErrors')
 
 module.exports = wrapAsync(async (req, res, next) => {
 
@@ -26,6 +28,20 @@ module.exports = wrapAsync(async (req, res, next) => {
       transaction
     })
 
+    const surveyGroupId = SurveyToBeFollowedUp.surveyGroupId || uuidv4()
+
+    const followUpSurveyAlreadyExists = await db.Survey.findOne({
+      where: {
+        surveyGroupId,
+        endDate: {
+          [db.Sequelize.Op.gt]: new Date(),
+          [db.Sequelize.Op.ne]: null
+        }
+      },
+      lock: true,
+      transaction
+    })
+    
     const Questions = await db.Question.findAll({
       where: {
         SurveySurveyId: SurveyToBeFollowedUp.surveyId
@@ -34,7 +50,9 @@ module.exports = wrapAsync(async (req, res, next) => {
       transaction
     })
 
-    const surveyGroupId = SurveyToBeFollowedUp.surveyGroupId || uuidv4()
+    if (followUpSurveyAlreadyExists) {
+      throw new StatusError("There can't be multiple followup surveys at the same time", 422)
+    }
 
     if (!SurveyToBeFollowedUp.surveyGroupId) {
       await SurveyToBeFollowedUp.update({
@@ -72,45 +90,35 @@ module.exports = wrapAsync(async (req, res, next) => {
       SurveySurveyId: FollowUpSurvey.surveyId
     }, {transaction})
 
-    const formUsers = () => new Promise(resolve => 
-      (async function asyncRecurseOverUserEmails(i = 0, promises = []) {
-        const email = req.body.to[Number(i)]
-        if (email) {
-          if (FollowUpSurvey.anon) {
-            const entry_hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
-            const id = uuidv4()
-            promises.push(db.AnonUser.create({ id, entry_hash }, {transaction}), Group.addAnonUser(id, {transaction}))
-            sendMails.push([email, 'Uusi kysely',
-            `Täytä anonyymi kysely ${process.env.FRONTEND_URL}/anon/questionnaire/${FollowUpSurvey.surveyId}/${entry_hash}
-            <br><br>
-            ${FollowUpSurvey.message || ''}`])
-          } else {
-            const [User] = await db.User.findOrCreate({
-              where: {
-                $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', email))
-              },
-              defaults: {
-                userId: uuidv4(),
-                email
-              },
-              attributes: ['userId'],
-              lock: true,
-              transaction
-            })
-            promises.push(Group.addUser(User, {transaction}))
-            sendMails.push([email, 'Uusi kysely',
-            `Täytä kysely ${process.env.FRONTEND_URL}/auth/questionnaire/${FollowUpSurvey.surveyId}
-            <br><br>
-            ${FollowUpSurvey.message || ''}`])
-          }
-          setImmediate(asyncRecurseOverUserEmails, i + 1, promises)
-        } else {
-          resolve(Promise.all(promises))
-        }
-      })()
-    )
-
-    await formUsers()
+    await asyncRecurser(req.body.to, async (email, promises) => {
+      if (FollowUpSurvey.anon) {
+        const entry_hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
+        const id = uuidv4()
+        promises.push(db.AnonUser.create({ id, entry_hash }, {transaction}), Group.addAnonUser(id, {transaction}))
+        sendMails.push([email, 'Uusi kysely',
+        `Täytä anonyymi kysely ${process.env.FRONTEND_URL}/anon/questionnaire/${FollowUpSurvey.surveyId}/${entry_hash}
+        <br><br>
+        ${FollowUpSurvey.message || ''}`])
+      } else {
+        const [User] = await db.User.findOrCreate({
+          where: {
+            $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', email))
+          },
+          defaults: {
+            userId: uuidv4(),
+            email
+          },
+          attributes: ['userId'],
+          lock: true,
+          transaction
+        })
+        promises.push(Group.addUser(User, {transaction}))
+        sendMails.push([email, 'Uusi kysely',
+        `Täytä kysely ${process.env.FRONTEND_URL}/auth/questionnaire/${FollowUpSurvey.surveyId}
+        <br><br>
+        ${FollowUpSurvey.message || ''}`])
+      }
+    })
 
     await transaction.commit()
 
