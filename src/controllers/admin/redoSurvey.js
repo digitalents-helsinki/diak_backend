@@ -19,7 +19,8 @@ module.exports = wrapAsync(async (req, res, next) => {
         endDate: {
           [db.Sequelize.Op.lt]: new Date(),
           [db.Sequelize.Op.ne]: null
-        }
+        },
+        archived: false
       },
       lock: true,
       transaction
@@ -71,38 +72,45 @@ module.exports = wrapAsync(async (req, res, next) => {
       SurveySurveyId: FollowUpSurvey.surveyId
     }, {transaction})
 
-    for (const to of req.body.to) {
-      if (FollowUpSurvey.anon) {
-        const hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
-        const AnonUser = await db.AnonUser.create({
-          id: uuidv4(),
-          entry_hash: hash
-        }, {transaction})
-        await Group.addAnonUser(AnonUser, {transaction})
-        sendMails.push([to, 'Uusi kysely',
-        `Täytä anonyymi kysely ${process.env.FRONTEND_URL}/anon/questionnaire/${FollowUpSurvey.surveyId}/${hash}
-        <br><br>
-        ${FollowUpSurvey.message || ''}`])
-      } else {
-        const [User] = await db.User.findOrCreate({
-          where: {
-            $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', to))
-          },
-          defaults: {
-            userId: uuidv4(),
-            email: to
-          },
-          attributes: ['userId'],
-          lock: true,
-          transaction
-        })
-        await Group.addUser(User, {transaction})
-        sendMails.push([to, 'Uusi kysely',
-        `Täytä kysely ${process.env.FRONTEND_URL}/auth/questionnaire/${FollowUpSurvey.surveyId}
-        <br><br>
-        ${FollowUpSurvey.message || ''}`])
-      }
-    }
+    const formUsers = () => new Promise(resolve => 
+      (async function asyncRecurseOverUserEmails(i = 0, promises = []) {
+        const email = req.body.to[Number(i)]
+        if (email) {
+          if (FollowUpSurvey.anon) {
+            const entry_hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
+            const id = uuidv4()
+            promises.push(db.AnonUser.create({ id, entry_hash }, {transaction}), Group.addAnonUser(id, {transaction}))
+            sendMails.push([email, 'Uusi kysely',
+            `Täytä anonyymi kysely ${process.env.FRONTEND_URL}/anon/questionnaire/${FollowUpSurvey.surveyId}/${entry_hash}
+            <br><br>
+            ${FollowUpSurvey.message || ''}`])
+          } else {
+            const [User] = await db.User.findOrCreate({
+              where: {
+                $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', email))
+              },
+              defaults: {
+                userId: uuidv4(),
+                email
+              },
+              attributes: ['userId'],
+              lock: true,
+              transaction
+            })
+            promises.push(Group.addUser(User, {transaction}))
+            sendMails.push([email, 'Uusi kysely',
+            `Täytä kysely ${process.env.FRONTEND_URL}/auth/questionnaire/${FollowUpSurvey.surveyId}
+            <br><br>
+            ${FollowUpSurvey.message || ''}`])
+          }
+          setImmediate(asyncRecurseOverUserEmails, i + 1, promises)
+        } else {
+          resolve(Promise.all(promises))
+        }
+      })()
+    )
+
+    await formUsers()
 
     await transaction.commit()
 

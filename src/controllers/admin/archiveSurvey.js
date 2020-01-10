@@ -1,16 +1,13 @@
 const db = require('../../models')
 
 module.exports = (req, res, next) => {
-  return db.Survey.update({
-      archived: true
+  return db.Survey.findOne({
+    where: {
+      surveyId: req.params.surveyId,
+      ownerId: res.locals.decoded.sub,
+      surveyGroupId: null
     },
-    {
-      where: {
-        surveyId: req.params.surveyId,
-        ownerId: res.locals.decoded.sub,
-        surveyGroupId: null
-    },
-    limit: 1
+    rejectOnEmpty: true
   // eslint-disable-next-line promise/no-callback-in-promise
-  }).then(([rows]) => rows ? res.sendStatus(204) : res.sendStatus(404)).catch(next)
+  }).then(Survey => Survey.update({ archived: true })).then(() => res.sendStatus(204)).catch(next)
 }

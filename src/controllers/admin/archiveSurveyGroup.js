@@ -6,7 +6,10 @@ module.exports = (req, res, next) => {
     },
     {
       where: {
-        surveyGroupId: req.params.surveyGroupId,
+        surveyGroupId: {
+          [db.Sequelize.Op.eq]: req.params.surveyGroupId,
+          [db.Sequelize.Op.ne]: null
+        },
         ownerId: res.locals.decoded.sub
     }
   // eslint-disable-next-line promise/no-callback-in-promise
