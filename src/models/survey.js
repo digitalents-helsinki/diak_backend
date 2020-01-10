@@ -63,13 +63,19 @@ module.exports = (sequelize, DataTypes) => {
 
   Survey.associate = models => {
     Survey.belongsTo(models.User, {
-      foreignKey: 'ownerId'
+      foreignKey: {
+        name: 'ownerId',
+        allowNull: false
+      }
     })
     Survey.hasOne(models.UserGroup, {
       onDelete: 'CASCADE'
     })
     Survey.hasMany(models.Question, {
-      onDelete: 'CASCADE'
+      onDelete: 'CASCADE',
+      foreignKey: {
+        allowNull: false
+      }
     })
   }
 

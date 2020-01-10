@@ -11,7 +11,7 @@ module.exports = (sequelize, DataTypes) => {
         type: DataTypes.TEXT,
         validate: {
           isValidDefaultQuestion(value) {
-            if (!['health', 'overcoming', 'living', 'coping', 'family', 'friends', 'finance', 'strengths', 'self_esteem', 'life_as_whole'].includes(value)) {
+            if (!['health', 'overcoming', 'living', 'coping', 'family', 'friends', 'finance', 'strengths', 'self_esteem', 'life_as_whole'].includes(value) && !value.endsWith('_custom')) {
               throw new Error(`${value} is not a valid default question`)
             }
           }
