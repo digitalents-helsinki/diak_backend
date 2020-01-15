@@ -38,9 +38,9 @@ module.exports = function(to, subject, html) {
 /* const sgMail = require('@sendgrid/mail')
 sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
-module.exports = (to, subject, html) => {
-  const mailData = Array.isArray(to) && Array.isArray(subject) && Array.isArray(html)
-    ? to.map((to, idx) => ({ from: process.env.EMAIL_FROM, to, subject: subject[Number(idx)], html: html[Number(idx)] })) 
-    : { from: process.env.EMAIL_FROM, to, subject, html }
-  sgMail.send(mailData).catch(err => console.error(err.toString()))
+module.exports = (mailData) => {
+  const completeMailData = Array.isArray(mailData)
+    ? mailData.map(({ to, subject, html }) => ({ from: process.env.EMAIL_FROM, to, subject, html }))
+    : { from: process.env.EMAIL_FROM, to: mailData.to, subject: mailData.subject, html: mailData.html }
+  sgMail.send(completeMailData).catch(err => console.error(err.toString()))
 } */

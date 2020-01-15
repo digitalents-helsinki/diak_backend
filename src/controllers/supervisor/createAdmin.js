@@ -32,19 +32,23 @@ module.exports = wrapAsync(async (req, res) => {
       },
       secret
     )
-    sendMail(req.body.email, 'Tervetuloa 3X10D -hallinnoitsijaksi', 
+    sendMail({
+      to: Admin.email,
+      subject: 'Tervetuloa 3X10D -hallinnoitsijaksi',
+      html:
       `Sinusta on tehty 3X10D -hallinnoitsija. Pääset asettamaan salasanasi allaolevasta linkistä. Linkki toimii viikon ajan.
       <br><br>
-      ${process.env.FRONTEND_URL}/password/create/${token}
-      `
-    )
+      ${process.env.FRONTEND_URL}/password/create/${token}`
+    })
   } else {
     await Admin.update({
       role: 'admin'
     })
-    sendMail(req.body.email, 'Tervetuloa 3X10D -hallinnoitsijaksi', 
-      `Sinusta on tehty 3X10D -hallinnoitsija. Löydät hallinnoitsijapaneelin kirjautumalla sisään 3X10D -sovellukseen.`
-    )
+    sendMail({
+      to: Admin.email,
+      subject: 'Tervetuloa 3X10D -hallinnoitsijaksi',
+      html: 'Sinusta on tehty 3X10D -hallinnoitsija. Löydät hallinnoitsijapaneelin kirjautumalla sisään 3X10D -sovellukseen.'
+    })
   }
 
   return res.json({success: 'true'})

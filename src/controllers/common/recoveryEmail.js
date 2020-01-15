@@ -53,10 +53,13 @@ module.exports = wrapAsync(async (req, res, next) => {
 
   await limiterRecoveryRateLimit.consume(req.body.email.toLowerCase()).catch(rejRes => { throw new RateLimiterError(rejRes) })
   
-  sendMail(userRecord.email, '3X10D unohtunut salasana',
+  sendMail({
+    to: userRecord.email,
+    subject: '3X10D unohtunut salasana',
+    html:
     `Pääset vaihtamaan salasanasi alla olevasta linkistä. Linkki toimii ${Math.round(secondsBetweenRecoveries / 60)} minuutin ajan.
     <br><br>
     ${process.env.FRONTEND_URL}/password/change/${token}`
-  )
+  })
 
 })

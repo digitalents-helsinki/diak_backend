@@ -9,7 +9,7 @@ const { StatusError } = require('../../utils/customErrors')
 module.exports = wrapAsync(async (req, res, next) => {
 
   let transaction
-  const sendMails = []
+  const mailData = []
 
   try {
     transaction = await db.sequelize.transaction()
@@ -95,10 +95,14 @@ module.exports = wrapAsync(async (req, res, next) => {
         const entry_hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
         const id = uuidv4()
         promises.push(db.AnonUser.create({ id, entry_hash }, {transaction}), Group.addAnonUser(id, {transaction}))
-        sendMails.push([email, 'Uusi kysely',
-        `Täytä anonyymi kysely ${process.env.FRONTEND_URL}/anon/questionnaire/${FollowUpSurvey.surveyId}/${entry_hash}
-        <br><br>
-        ${FollowUpSurvey.message || ''}`])
+        mailData.push({
+          to: email,
+          subject: 'Uusi kysely',
+          html:
+          `Täytä anonyymi kysely ${process.env.FRONTEND_URL}/anon/questionnaire/${FollowUpSurvey.surveyId}/${entry_hash}
+          <br><br>
+          ${FollowUpSurvey.message || ''}`
+        })
       } else {
         const [User] = await db.User.findOrCreate({
           where: {
@@ -113,10 +117,14 @@ module.exports = wrapAsync(async (req, res, next) => {
           transaction
         })
         promises.push(Group.addUser(User, {transaction}))
-        sendMails.push([email, 'Uusi kysely',
-        `Täytä kysely ${process.env.FRONTEND_URL}/auth/questionnaire/${FollowUpSurvey.surveyId}
-        <br><br>
-        ${FollowUpSurvey.message || ''}`])
+        mailData.push({
+          to: email,
+          subject: 'Uusi kysely',
+          html:
+          `Täytä kysely ${process.env.FRONTEND_URL}/auth/questionnaire/${FollowUpSurvey.surveyId}
+          <br><br>
+          ${FollowUpSurvey.message || ''}`
+        })
       }
     })
 
@@ -127,7 +135,7 @@ module.exports = wrapAsync(async (req, res, next) => {
     return next(err)
   }
   if (transaction.finished === 'commit') {
-    sendMails.forEach(params => sendMail(...params))
+    sendMail(mailData)
     return res.send("Survey succesfully created")
   }
 })

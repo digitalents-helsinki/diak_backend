@@ -60,7 +60,10 @@ module.exports = wrapAsync(async (req, res, next) => {
       `
   }, '')
 
-  sendMail(req.body.email, 'Vastauksesi kyselyyn', 
+  sendMail({
+    to: req.body.email,
+    subject: 'Vastauksesi kyselyyn',
+    html:
     `Tässä ovat vastauksesi täyttämääsi kyselyyn:
     <br><br>
     <table style="border: 2px solid black; border-collapse: separate; border-spacing: 0; width: 100%;">
@@ -76,8 +79,8 @@ module.exports = wrapAsync(async (req, res, next) => {
         </td>
       </tr>
       ${tableContents}
-    </table>
-    `)
+    </table>`
+  })
   
   return res.send("Email sent")
 })

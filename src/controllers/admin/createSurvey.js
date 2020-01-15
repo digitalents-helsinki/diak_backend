@@ -8,7 +8,7 @@ const asyncRecurser = require('../../utils/asyncRecurser')
 module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
 
   let transaction
-  const sendMails = []
+  const mailData = []
 
   try {
     transaction = await db.sequelize.transaction()
@@ -59,10 +59,14 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
         const id = uuidv4()
         promises.push(db.AnonUser.create({ id, entry_hash }, {transaction}), Group.addAnonUser(id, {transaction}))
         if (final) {
-          sendMails.push([email, 'Uusi kysely',
-          `Täytä anonyymi kysely ${process.env.FRONTEND_URL}/anon/questionnaire/${Survey.surveyId}/${entry_hash}
-          <br><br>
-          ${Survey.message || ''}`])
+          mailData.push({
+            to: email,
+            subject: 'Uusi kysely',
+            html:
+            `Täytä anonyymi kysely ${process.env.FRONTEND_URL}/anon/questionnaire/${Survey.surveyId}/${entry_hash}
+            <br><br>
+            ${Survey.message || ''}`
+          })
         }
       } else {
         const [User] = await db.User.findOrCreate({
@@ -79,10 +83,14 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
         })
         promises.push(Group.addUser(User, {transaction}))
         if (final) {
-          sendMails.push([email, 'Uusi kysely',
-          `Täytä kysely ${process.env.FRONTEND_URL}/auth/questionnaire/${Survey.surveyId}
-          <br><br>
-          ${Survey.message || ''}`])
+          mailData.push({
+            to: email,
+            subject: 'Uusi kysely',
+            html:
+            `Täytä kysely ${process.env.FRONTEND_URL}/auth/questionnaire/${Survey.surveyId}
+            <br><br>
+            ${Survey.message || ''}`
+          })
         }
       }
     })
@@ -94,7 +102,7 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
     return next(err)
   }
   if (transaction.finished === 'commit') {
-    if (final) sendMails.forEach(params => sendMail(...params))
+    if (final) sendMail(mailData)
     return res.send("Survey succesfully created")
   }
 })
