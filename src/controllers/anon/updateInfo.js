@@ -21,7 +21,7 @@ module.exports = wrapAsync(async (req, res, next) => {
 
   await AnonUser.update({
     age: req.body.anonymousinfo.age,
-    gender:req.body.anonymousinfo.gender,
+    gender: req.body.anonymousinfo.gender,
   })
   
   return res.send("Anonymous information updated")
