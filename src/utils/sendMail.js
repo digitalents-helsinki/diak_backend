@@ -1,46 +1,83 @@
-const nodemailer = require('nodemailer')
-
-const transporter = nodemailer.createTransport({
-  host: 'smtp.gmail.com',
-  port: '587',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  },
-  secureConnection: 'false'
-})
-
-/* transporter.set('oauth2_provision_cb', (user, renew, callback)=> {
-  let accessToken = userTokens[user]
-  if(!accessToken){
-    return callback(new Error('Unknown user'))
-  } else {
-    return callback(null, accessToken)
-  }
-}) */
-
-module.exports = function(to, subject, html) {
-  transporter.sendMail({
-    from: process.env.EMAIL_USER,
-    to: to,
-    subject: subject,
-    html: html,
-  }, function (err, info) {
-    if (err) {
-      console.log(err)
-    } else {
-      console.log(info)
-    }
-  })
-}
-
-
-/* const sgMail = require('@sendgrid/mail')
+const sgMail = require('@sendgrid/mail')
 sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
-module.exports = (mailData) => {
-  const completeMailData = Array.isArray(mailData)
-    ? mailData.map(({ to, subject, html }) => ({ from: process.env.EMAIL_FROM, to, subject, html }))
-    : { from: process.env.EMAIL_FROM, to: mailData.to, subject: mailData.subject, html: mailData.html }
-  sgMail.send(completeMailData).catch(err => console.error(err.toString()))
-} */
+class Email {
+  constructor(from = process.env.EMAIL_FROM) {
+    this.from = from
+  }
+
+  send() {
+    if (this.data) sendMail(this.data)
+    else throw new Error('Nothing to send!')
+  }
+}
+
+exports.MassEmail = class MassEmail {
+  constructor() {
+    this.data = []
+  }
+
+  add(email) {
+    if (email instanceof Email) this.data.push(email.data)
+    else throw new Error(`${email} is not acceptable as an email`)
+  }
+
+  send() {
+    if (this.data.length) sendMail(this.data)
+  }
+}
+
+exports.CustomEmail = class CustomEmail extends Email {
+  constructor(to, subject, html) {
+    super()
+
+    this.data = {
+      to,
+      subject,
+      html,
+      from: this.from
+    }
+  }
+}
+
+exports.AnonSurveyEmail = class AnonSurveyEmail extends Email {
+  constructor(to, surveyId, message, entryHash) {
+    super()
+
+    const subject = 'Uusi 3X10D -kysely'
+
+    const html =
+    `Täytä anonyymi kysely osoitteessa ${process.env.FRONTEND_URL}/anon/questionnaire/${surveyId}/${entryHash}
+    <br><br>
+    ${message || ''}`
+
+    this.data = {
+      from: this.from,
+      to,
+      subject,
+      html
+    }
+  }
+}
+
+exports.AuthSurveyEmail = class AuthSurveyEmail extends Email {
+  constructor(to, surveyId, message) {
+    super()
+    
+    const subject = 'Uusi 3X10D -kysely'
+
+    const html =
+    `Täytä kysely osoitteessa ${process.env.FRONTEND_URL}/auth/questionnaire/${surveyId}
+    <br><br>
+    ${message || ''}`
+
+    this.data = {
+      from: this.from,
+      to,
+      subject,
+      html
+    }
+  }
+}
+
+const sendMail = (mail) => sgMail.send(mail.data || mail).catch(err => console.error(err.toString()))

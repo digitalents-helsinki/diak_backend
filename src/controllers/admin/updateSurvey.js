@@ -2,13 +2,13 @@ const wrapAsync = require('../../utils/wrapAsync')
 const db = require('../../models')
 const uuidv4 = require('uuid/v4')
 const crypto = require('crypto')
-const sendMail = require('../../utils/sendMail')
+const { MassEmail, AnonSurveyEmail, AuthSurveyEmail } = require('../../utils/sendMail')
 const asyncRecurser = require('../../utils/asyncRecurser')
 
 module.exports = wrapAsync(async (req, res, next) => {
     
   let transaction
-  const mailData = []
+  const emails = new MassEmail()
   
   try {
     transaction = await db.sequelize.transaction();
@@ -52,19 +52,11 @@ module.exports = wrapAsync(async (req, res, next) => {
     }, {transaction})
 
     if (Survey.anon) {
-
       await asyncRecurser(anonEmails, (email, promises) => {
         const entry_hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
         const id = uuidv4()
         promises.push(db.AnonUser.create({ id, entry_hash }, {transaction}), Group.addAnonUser(id, {transaction}))
-        mailData.push({
-          to: email,
-          subject: 'Uusi kysely',
-          html:
-          `Täytä anonyymi kysely ${process.env.FRONTEND_URL}/anon/questionnaire/${Survey.surveyId}/${entry_hash}
-          <br><br>
-          ${Survey.message || ''}`
-        })
+        emails.add(new AnonSurveyEmail(email, Survey.surveyId, Survey.message, entry_hash))
       })
       await Group.update({
         respondents: [...Group.respondents, ...anonEmails]
@@ -96,14 +88,7 @@ module.exports = wrapAsync(async (req, res, next) => {
           transaction
         })
         promises.push(Group.addUser(User, {transaction}))
-        mailData.push({
-          to: email,
-          subject: 'Uusi kysely',
-          html: 
-          `Täytä kysely ${process.env.FRONTEND_URL}/auth/questionnaire/${Survey.surveyId}
-          <br><br>
-          ${Survey.message || ''}`
-        })
+        emails.add(new AuthSurveyEmail(email, Survey.surveyId, Survey.message))
       })
 
       await asyncRecurser(removedRespondents, async (User, promises) => {
@@ -130,7 +115,7 @@ module.exports = wrapAsync(async (req, res, next) => {
     return next(err)
   }
   if (transaction.finished === 'commit') {
-    sendMail(mailData)
+    emails.send()
     const Survey = await db.Survey.findByPk(req.params.surveyId, {
       include: {
         model: db.UserGroup,

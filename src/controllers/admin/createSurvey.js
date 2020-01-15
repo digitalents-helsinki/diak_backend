@@ -2,13 +2,13 @@ const wrapAsync = require('../../utils/wrapAsync')
 const db = require('../../models')
 const uuidv4 = require('uuid/v4')
 const crypto = require('crypto')
-const sendMail = require('../../utils/sendMail')
+const { MassEmail, AnonSurveyEmail, AuthSurveyEmail } = require('../../utils/sendMail')
 const asyncRecurser = require('../../utils/asyncRecurser')
 
 module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
 
   let transaction
-  const mailData = []
+  const emails = new MassEmail()
 
   try {
     transaction = await db.sequelize.transaction()
@@ -59,14 +59,7 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
         const id = uuidv4()
         promises.push(db.AnonUser.create({ id, entry_hash }, {transaction}), Group.addAnonUser(id, {transaction}))
         if (final) {
-          mailData.push({
-            to: email,
-            subject: 'Uusi kysely',
-            html:
-            `Täytä anonyymi kysely ${process.env.FRONTEND_URL}/anon/questionnaire/${Survey.surveyId}/${entry_hash}
-            <br><br>
-            ${Survey.message || ''}`
-          })
+          emails.add(new AnonSurveyEmail(email, Survey.surveyId, Survey.message, entry_hash))
         }
       } else {
         const [User] = await db.User.findOrCreate({
@@ -83,14 +76,7 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
         })
         promises.push(Group.addUser(User, {transaction}))
         if (final) {
-          mailData.push({
-            to: email,
-            subject: 'Uusi kysely',
-            html:
-            `Täytä kysely ${process.env.FRONTEND_URL}/auth/questionnaire/${Survey.surveyId}
-            <br><br>
-            ${Survey.message || ''}`
-          })
+          emails.add(new AuthSurveyEmail(email, Survey.surveyId, Survey.message))
         }
       }
     })
@@ -102,7 +88,7 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
     return next(err)
   }
   if (transaction.finished === 'commit') {
-    if (final) sendMail(mailData)
+    if (final) emails.send()
     return res.send("Survey succesfully created")
   }
 })

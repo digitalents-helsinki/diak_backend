@@ -1,5 +1,5 @@
 const wrapAsync = require('../../utils/wrapAsync')
-const sendMail = require('../../utils/sendMail')
+const { CustomEmail } = require('../../utils/sendMail')
 const db = require('../../models')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')
@@ -53,13 +53,10 @@ module.exports = wrapAsync(async (req, res, next) => {
 
   await limiterRecoveryRateLimit.consume(req.body.email.toLowerCase()).catch(rejRes => { throw new RateLimiterError(rejRes) })
   
-  sendMail({
-    to: userRecord.email,
-    subject: '3X10D unohtunut salasana',
-    html:
+  new CustomEmail(userRecord.email, '3X10D unohtunut salasana',
     `Pääset vaihtamaan salasanasi alla olevasta linkistä. Linkki toimii ${Math.round(secondsBetweenRecoveries / 60)} minuutin ajan.
     <br><br>
     ${process.env.FRONTEND_URL}/password/change/${token}`
-  })
+  ).send()
 
 })

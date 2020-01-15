@@ -1,5 +1,5 @@
 const uuidv4 = require('uuid/v4')
-const sendMail = require('../../utils/sendMail')
+const { CustomEmail } = require('../../utils/sendMail')
 const wrapAsync = require('../../utils/wrapAsync')
 const crypto = require('crypto')
 const jwt = require('jsonwebtoken')
@@ -32,23 +32,18 @@ module.exports = wrapAsync(async (req, res) => {
       },
       secret
     )
-    sendMail({
-      to: Admin.email,
-      subject: 'Tervetuloa 3X10D -hallinnoitsijaksi',
-      html:
+    new CustomEmail(Admin.email, 'Tervetuloa 3X10D -hallinnoitsijaksi',
       `Sinusta on tehty 3X10D -hallinnoitsija. Pääset asettamaan salasanasi allaolevasta linkistä. Linkki toimii viikon ajan.
       <br><br>
       ${process.env.FRONTEND_URL}/password/create/${token}`
-    })
+    ).send()
   } else {
     await Admin.update({
       role: 'admin'
     })
-    sendMail({
-      to: Admin.email,
-      subject: 'Tervetuloa 3X10D -hallinnoitsijaksi',
-      html: 'Sinusta on tehty 3X10D -hallinnoitsija. Löydät hallinnoitsijapaneelin kirjautumalla sisään 3X10D -sovellukseen.'
-    })
+    new CustomEmail(Admin.email, 'Tervetuloa 3X10D -hallinnoitsijaksi',
+      'Sinusta on tehty 3X10D -hallinnoitsija. Löydät hallinnoitsijapaneelin kirjautumalla sisään 3X10D -sovellukseen.'
+    ).send()
   }
 
   return res.json({success: 'true'})
