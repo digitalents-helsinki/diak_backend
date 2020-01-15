@@ -9,7 +9,7 @@ const { StatusError } = require('../../utils/customErrors')
 module.exports = wrapAsync(async (req, res, next) => {
 
   let transaction
-  const emails = new MassEmail()
+  const mails = new MassEmail()
 
   try {
     transaction = await db.sequelize.transaction()
@@ -67,8 +67,8 @@ module.exports = wrapAsync(async (req, res, next) => {
       name: req.body.name,
       message: req.body.message,
       anon: SurveyToBeFollowedUp.anon,
-      startDate: req.body.startDate ? new Date(req.body.startDate).setHours(0, 0, 0) : null,
-      endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59) : null,
+      startDate: req.body.startDate ? new Date(req.body.startDate).setHours(0, 0, 0, 0) : null,
+      endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59, 999) : null,
       respondents_size: req.body.to.length,
       Questions: Questions.map(question => ({
         questionId: uuidv4(),
@@ -90,13 +90,15 @@ module.exports = wrapAsync(async (req, res, next) => {
       SurveySurveyId: FollowUpSurvey.surveyId
     }, {transaction})
 
+    const todayDistant = (d => new Date(d.setHours(23, 59, 59, 999)))(new Date())
+
     await asyncRecurser(req.body.to, async (email, promises) => {
-      if (FollowUpSurvey.anon) {
+      if (FollowUpSurvey.anon && (!FollowUpSurvey.startDate || new Date(FollowUpSurvey.startDate) === todayDistant)) {
         const entry_hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
         const id = uuidv4()
         promises.push(db.AnonUser.create({ id, entry_hash }, {transaction}), Group.addAnonUser(id, {transaction}))
-        emails.add(new AnonSurveyEmail(email, FollowUpSurvey.surveyId, FollowUpSurvey.message, entry_hash))
-      } else {
+        mails.add(new AnonSurveyEmail(email, FollowUpSurvey.surveyId, FollowUpSurvey.message, entry_hash))
+      } else if (!FollowUpSurvey.anon) {
         const [User] = await db.User.findOrCreate({
           where: {
             $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', email))
@@ -110,7 +112,7 @@ module.exports = wrapAsync(async (req, res, next) => {
           transaction
         })
         promises.push(Group.addUser(User, {transaction}))
-        emails.add(new AuthSurveyEmail(email, FollowUpSurvey.surveyId, FollowUpSurvey.message))
+        if (!FollowUpSurvey.startDate || new Date(FollowUpSurvey.startDate) === todayDistant) mails.add(new AuthSurveyEmail(email, FollowUpSurvey.surveyId, FollowUpSurvey.message))
       }
     })
 
@@ -121,7 +123,7 @@ module.exports = wrapAsync(async (req, res, next) => {
     return next(err)
   }
   if (transaction.finished === 'commit') {
-    emails.send()
+    mails.send()
     return res.send("Survey succesfully created")
   }
 })

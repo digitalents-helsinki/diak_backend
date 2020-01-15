@@ -7,6 +7,7 @@ const csrf = require('csurf')
 const cookieParser = require('cookie-parser')
 const cors = require('cors')
 const generalRateLimiter = require('./controllers/common/generalRateLimiter')
+const schedule = require('./utils/schedule')
 
 const db = require('./models')
 
@@ -50,3 +51,5 @@ app.use(require('./router/common'))
 
 app.use(require('./controllers/error/errorLogger'))
 app.use(require('./controllers/error/errorResponder'))
+
+schedule()

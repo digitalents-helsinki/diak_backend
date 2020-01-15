@@ -8,7 +8,7 @@ const asyncRecurser = require('../../utils/asyncRecurser')
 module.exports = wrapAsync(async (req, res, next) => {
     
   let transaction
-  const emails = new MassEmail()
+  const mails = new MassEmail()
   
   try {
     transaction = await db.sequelize.transaction();
@@ -46,23 +46,25 @@ module.exports = wrapAsync(async (req, res, next) => {
 
     await Survey.update({
       name: req.body.name,
-      endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59) : null,
+      endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59, 999) : null,
       respondents_size: Survey.anon ? anonEmails.length + Survey.respondents_size : emails.length,
       active: req.body.active
     }, {transaction})
 
-    if (Survey.anon) {
+    const todayDistant = (d => new Date(d.setHours(23, 59, 59, 999)))(new Date())
+    
+    if (Survey.anon && (!Survey.startDate || new Date(Survey.startDate) === todayDistant)) {
       await asyncRecurser(anonEmails, (email, promises) => {
         const entry_hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
         const id = uuidv4()
         promises.push(db.AnonUser.create({ id, entry_hash }, {transaction}), Group.addAnonUser(id, {transaction}))
-        emails.add(new AnonSurveyEmail(email, Survey.surveyId, Survey.message, entry_hash))
+        mails.add(new AnonSurveyEmail(email, Survey.surveyId, Survey.message, entry_hash))
       })
       await Group.update({
         respondents: [...Group.respondents, ...anonEmails]
       }, {transaction})
 
-    } else {
+    } else if (!Survey.anon) {
       
       const Users = await Group.getUsers({
         attributes: ['userId', 'email'],
@@ -88,7 +90,7 @@ module.exports = wrapAsync(async (req, res, next) => {
           transaction
         })
         promises.push(Group.addUser(User, {transaction}))
-        emails.add(new AuthSurveyEmail(email, Survey.surveyId, Survey.message))
+        if (!Survey.startDate || new Date(Survey.startDate) === todayDistant) mails.add(new AuthSurveyEmail(email, Survey.surveyId, Survey.message))
       })
 
       await asyncRecurser(removedRespondents, async (User, promises) => {
@@ -115,7 +117,7 @@ module.exports = wrapAsync(async (req, res, next) => {
     return next(err)
   }
   if (transaction.finished === 'commit') {
-    emails.send()
+    mails.send()
     const Survey = await db.Survey.findByPk(req.params.surveyId, {
       include: {
         model: db.UserGroup,

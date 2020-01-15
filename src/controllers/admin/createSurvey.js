@@ -8,7 +8,7 @@ const asyncRecurser = require('../../utils/asyncRecurser')
 module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
 
   let transaction
-  const emails = new MassEmail()
+  const mails = new MassEmail()
 
   try {
     transaction = await db.sequelize.transaction()
@@ -28,8 +28,8 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
       name: req.body.id,
       message: req.body.message,
       anon: req.body.anon,
-      startDate: req.body.startDate ? new Date(req.body.startDate).setHours(0, 0, 0) : null,
-      endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59) : null,
+      startDate: req.body.startDate ? new Date(req.body.startDate).setHours(0, 0, 0, 0) : null,
+      endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59, 999) : null,
       respondents_size: req.body.to.length,
       final,
       Questions: req.body.questions.map((question, idx) => ({
@@ -53,15 +53,15 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
 
     await Group.setSurvey(Survey, {transaction})
 
+    const todayDistant = (d => new Date(d.setHours(23, 59, 59, 999)))(new Date())
+
     await asyncRecurser(req.body.to, async (email, promises) => {
-      if (Survey.anon) {
+      if (Survey.anon && final && (!Survey.startDate || new Date(Survey.startDate) === todayDistant)) {
         const entry_hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
         const id = uuidv4()
         promises.push(db.AnonUser.create({ id, entry_hash }, {transaction}), Group.addAnonUser(id, {transaction}))
-        if (final) {
-          emails.add(new AnonSurveyEmail(email, Survey.surveyId, Survey.message, entry_hash))
-        }
-      } else {
+        mails.add(new AnonSurveyEmail(email, Survey.surveyId, Survey.message, entry_hash))
+      } else if (!Survey.anon) {
         const [User] = await db.User.findOrCreate({
           where: {
             $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', email))
@@ -75,8 +75,8 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
           transaction
         })
         promises.push(Group.addUser(User, {transaction}))
-        if (final) {
-          emails.add(new AuthSurveyEmail(email, Survey.surveyId, Survey.message))
+        if (final && (!Survey.startDate || new Date(Survey.startDate) === todayDistant)) {
+          mails.add(new AuthSurveyEmail(email, Survey.surveyId, Survey.message))
         }
       }
     })
@@ -88,7 +88,7 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
     return next(err)
   }
   if (transaction.finished === 'commit') {
-    if (final) emails.send()
+    if (final) mails.send()
     return res.send("Survey succesfully created")
   }
 })
