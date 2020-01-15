@@ -1,7 +1,7 @@
 const db = require('../../models')
 const wrapAsync = require('../../utils/wrapAsync')
 const { StatusError } = require('../../utils/customErrors')
-const sendMail = require('../../utils/mail')
+const sendMail = require('../../utils/sendMail')
 const escape = require('escape-html')
 
 module.exports = wrapAsync(async (req, res, next) => {

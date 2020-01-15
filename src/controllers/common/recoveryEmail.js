@@ -1,5 +1,5 @@
 const wrapAsync = require('../../utils/wrapAsync')
-const sendMail = require('../../utils/mail')
+const sendMail = require('../../utils/sendMail')
 const db = require('../../models')
 const jwt = require('jsonwebtoken')
 const crypto = require('crypto')

@@ -1,5 +1,5 @@
 const uuidv4 = require('uuid/v4')
-const sendMail = require('../../utils/mail')
+const sendMail = require('../../utils/sendMail')
 const wrapAsync = require('../../utils/wrapAsync')
 const crypto = require('crypto')
 const jwt = require('jsonwebtoken')

@@ -2,7 +2,7 @@ const wrapAsync = require('../../utils/wrapAsync')
 const db = require('../../models')
 const uuidv4 = require('uuid/v4')
 const crypto = require('crypto')
-const sendMail = require('../../utils/mail')
+const sendMail = require('../../utils/sendMail')
 const asyncRecurser = require('../../utils/asyncRecurser')
 const { StatusError } = require('../../utils/customErrors')
 
