@@ -1,5 +1,6 @@
 const wrapAsync = require('../../utils/wrapAsync')
 const db = require('../../models')
+const asyncRecurser = require('../../utils/asyncRecurser')
 
 module.exports = wrapAsync(async (req, res, next) => {
   const UserGroups = await db.UserGroup.findAll({
@@ -11,23 +12,13 @@ module.exports = wrapAsync(async (req, res, next) => {
     attributes: ['id', 'respondents']
   })
 
-  const removeEmailFromUserGroups = () => new Promise(resolve => 
-    (function asyncRecurseOverUserGroups(i = 0, promises = []) {
-      const currentGroup = UserGroups[Number(i)]
-      if (currentGroup) {
-        promises.push(
-          currentGroup.update({
-            respondents: currentGroup.respondents.filter(email => email !== req.body.email)
-          })
-        )
-        setImmediate(asyncRecurseOverUserGroups, i + 1, promises)
-      } else {
-        resolve(Promise.all(promises))
-      }
-    })()
-  )
-
-  await removeEmailFromUserGroups()
+  await asyncRecurser(UserGroups, (currentGroup, promises) => {
+    promises.push(
+      currentGroup.update({
+        respondents: currentGroup.respondents.filter(email => email !== req.body.email)
+      })
+    )
+  })
 
   return res.json({
     email: req.body.email,

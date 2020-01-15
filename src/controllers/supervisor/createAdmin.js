@@ -8,7 +8,8 @@ const db = require('../../models')
 module.exports = wrapAsync(async (req, res) => {
   const [Admin, created] = await db.User.findOrCreate({
     where: {
-      $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', req.body.email))
+      $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', req.body.email)),
+      role: 'user'
     },
     defaults: {
       userId: uuidv4(),
