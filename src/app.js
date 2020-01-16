@@ -51,7 +51,8 @@ const umzug = new Umzug({
     sequelize: db.sequelize
   },
   migrations: {
-    path: 'migrations'
+    traverseDirectories: true,
+    path: './src/migrations'
   }
 })
 
