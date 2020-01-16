@@ -49,6 +49,9 @@ const umzug = new Umzug({
   storage: 'sequelize',
   storageOptions: {
     sequelize: db.sequelize
+  },
+  migrations: {
+    path: 'migrations'
   }
 })
 
