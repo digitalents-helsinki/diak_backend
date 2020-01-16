@@ -51,7 +51,7 @@ const umzug = new Umzug({
     sequelize: db.sequelize
   },
   migrations: {
-    path: process.cwd() + '/src/migrations'
+    path: './src/migrations'
   }
 })
 // If you need to change the database, write a migration file in the migrations folder and it will be automatically executed
