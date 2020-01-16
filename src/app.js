@@ -49,9 +49,6 @@ const umzug = new Umzug({
   storage: 'sequelize',
   storageOptions: {
     sequelize: db.sequelize
-  },
-  migrations: {
-    path: require('path').join(__dirname, 'migrations')
   }
 })
 
