@@ -8,7 +8,14 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT
     },
     role: {
-      type: DataTypes.TEXT
+      type: DataTypes.TEXT,
+      allowNull: false,
+      defaultValue: 'user',
+      validate: {
+        allowedRoles(value) {
+          if (!['user', 'admin'].includes(value)) throw new Error(`Role "${value}" is not allowed`)
+        }
+      }
     },
     email: {
       type: DataTypes.TEXT,
@@ -20,20 +27,28 @@ module.exports = (sequelize, DataTypes) => {
     password: {
       type: DataTypes.TEXT
     },
-    salt: {
-      type: DataTypes.TEXT
-    },
     post_number: {
-      type: DataTypes.TEXT
+      type: DataTypes.STRING
     },
     phone_number: {
-      type: DataTypes.TEXT
+      type: DataTypes.STRING
     },
-    birth_date: {
-      type: DataTypes.DATE
+    age: {
+      type: DataTypes.SMALLINT
     },
     gender: {
+      type: DataTypes.STRING(6)
+    },
+    external_id: {
       type: DataTypes.TEXT
+    },
+    external_type: {
+      type: DataTypes.TEXT,
+      validate: {
+        allowedProviders(value) {
+          if (!['GOOGLE', 'FACEBOOK'].includes(value)) throw new Error(`Provider "${value}" is not allowed`)
+        }
+      }
     }
   },
   {

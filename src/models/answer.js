@@ -9,10 +9,15 @@ module.exports = (sequelize, DataTypes) => {
     },
     final: {
       type: DataTypes.BOOLEAN,
-      defaultValue: true
+      defaultValue: true,
+      allowNull: false
     },
     value: {
-      type: DataTypes.INTEGER
+      type: DataTypes.SMALLINT,
+      validate: {
+        min: 0,
+        max: 10
+      }
     },
     description: {
       type: DataTypes.STRING(2000)

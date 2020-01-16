@@ -8,13 +8,15 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true
     },
     name: {
-      type: DataTypes.STRING(100)
+      type: DataTypes.STRING(100),
+      allowNull: false
     },
     message: {
       type: DataTypes.TEXT
     },
     anon: {
-      type: DataTypes.BOOLEAN
+      type: DataTypes.BOOLEAN,
+      allowNull: false
     },
     startDate: {
       type: DataTypes.DATE
@@ -24,31 +26,56 @@ module.exports = (sequelize, DataTypes) => {
     },
     respondents_size: {
       type: DataTypes.INTEGER,
-      defaultValue: 0
+      defaultValue: 0,
+      allowNull: false
     },
     responses: {
       type: DataTypes.INTEGER,
-      defaultValue: 0
+      defaultValue: 0,
+      allowNull: false
     },
     archived: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false
+      defaultValue: false,
+      allowNull: false
     },
     active: {
       type: DataTypes.BOOLEAN,
-      defaultValue: true
+      defaultValue: true,
+      allowNull: false
+    },
+    final: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true,
+      allowNull: false
+    },
+    surveyGroupId: {
+      type: DataTypes.UUID
+    }
+  },
+  {
+    defaultScope: {
+      where: {
+        final: true
+      }
     }
   })
 
   Survey.associate = models => {
     Survey.belongsTo(models.User, {
-      foreignKey: 'ownerId'
+      foreignKey: {
+        name: 'ownerId',
+        allowNull: false
+      }
     })
     Survey.hasOne(models.UserGroup, {
       onDelete: 'CASCADE'
     })
     Survey.hasMany(models.Question, {
-      onDelete: 'CASCADE'
+      onDelete: 'CASCADE',
+      foreignKey: {
+        allowNull: false
+      }
     })
   }
 

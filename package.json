@@ -4,17 +4,25 @@
   "main": "src/app.js",
   "private": true,
   "dependencies": {
+    "@sendgrid/mail": "^6.4.0",
     "argon2": "^0.24.1",
+    "cookie-parser": "^1.4.4",
     "cors": "^2.8.5",
+    "csurf": "^1.10.0",
     "dotenv": "^8.0.0",
     "eslint-plugin-promise": "^4.2.1",
     "eslint-plugin-security": "^1.4.0",
     "express": "^4.17.1",
+    "google-auth-library": "^5.8.0",
+    "helmet": "^3.21.2",
     "jsonwebtoken": "^8.5.1",
-    "nodemailer": "^6.3.0",
+    "morgan": "^1.9.1",
+    "node-cron": "^2.0.3",
     "nodemon": "^1.19.4",
     "pg": "^7.11.0",
+    "rate-limiter-flexible": "^1.2.2",
     "sequelize": "^5.9.2",
+    "umzug": "^2.2.0",
     "uuid": "^3.3.2"
   },
   "scripts": {
@@ -23,6 +31,7 @@
     "debug": "node --inspect src/app.js"
   },
   "devDependencies": {
+    "blocked-at": "^1.2.0",
     "eslint": "^6.4.0"
   }
 }

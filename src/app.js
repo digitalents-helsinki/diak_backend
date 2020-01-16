@@ -1,38 +1,72 @@
+require('dotenv').config()
+if (process.env.NODE_ENV === 'development') require('blocked-at')((time, stack) => console.log(`Blocked for ${time}ms, operation started here:`, stack), { threshold: 40 })
 const express = require('express')
+const helmet = require('helmet')
 const bodyParser = require('body-parser')
+const csrf = require('csurf')
+const cookieParser = require('cookie-parser')
 const cors = require('cors')
-const config = require('dotenv')
-config.config()
+const generalRateLimiter = require('./controllers/common/generalRateLimiter')
+const schedule = require('./utils/schedule')
 
 const db = require('./models')
-const apiAnonUser = require('./controllers/anonuser')
-const apiResult = require('./controllers/result')
-const apiSurvey = require('./controllers/survey')
-const apiAdmin = require('./controllers/admin')
-const apiAuth = require('./controllers/auth')
-const apiUser = require('./controllers/user')
-const apiTestSurvey = require('./controllers/testsurvey')
-const errorHandler = require('./controllers/error')
-
-const app = express()
-app.use(bodyParser.json())
-app.use(bodyParser.urlencoded({ extended: true }))
-app.use(cors())
+const Umzug = require('umzug')
+const umzug = new Umzug({
+  storage: 'sequelize',
+  storageOptions: {
+    sequelize: db.sequelize
+  },
+  migrations: {
+    path: 'src/migrations'
+  }
+})
+// If you need to change the database, write a migration file in the migrations folder and it will be automatically executed
+umzug.up()
+  .then(migrations => 
+    migrations.length ? 
+    console.log('Executed migrations:', migrations) : 
+    console.log("No pending migrations"))
+  .catch(err => console.error(err))
 
 db.sequelize.sync({ force: false })
 .then(() => {
-  app.listen(process.env.PORT, () => {
+  return app.listen(process.env.PORT, () => {
     console.log(`app listening on port ${process.env.PORT}`)
   })
-  return true
 })
 
-apiAnonUser(app, db)
-apiUser(app, db)
-apiResult(app, db)
-apiSurvey(app, db)
-apiAdmin(app, db)
-apiAuth(app, db)
-apiUser(app, db)
-apiTestSurvey(app, db)
-errorHandler(app, db)
+const app = express()
+
+app.use(helmet())
+
+const corsOptions = {
+  origin: process.env.CORS_ORIGIN,
+  allowedHeaders: ['Content-type', 'Authorization', 'CSRF-Token'],
+  credentials: true
+}
+app.use(cors(corsOptions))
+
+app.use(generalRateLimiter)
+
+app.use(cookieParser())
+
+const csrfProtection = csrf({
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production'
+  }
+})
+app.use(csrfProtection)
+
+app.use(bodyParser.json())
+
+app.use('/supervisor', require('./router/supervisor'))
+app.use('/admin', require('./router/admin'))
+app.use('/auth', require('./router/auth'))
+app.use('/anon', require('./router/anon'))
+app.use(require('./router/common'))
+
+app.use(require('./controllers/error/errorLogger'))
+app.use(require('./controllers/error/errorResponder'))
+
+schedule()

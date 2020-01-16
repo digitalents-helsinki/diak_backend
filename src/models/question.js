@@ -8,10 +8,18 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true
       },
       name: {
-        type: DataTypes.TEXT
+        type: DataTypes.TEXT,
+        validate: {
+          isValidDefaultQuestion(value) {
+            if (!['health', 'overcoming', 'living', 'coping', 'family', 'friends', 'finance', 'strengths', 'self_esteem', 'life_as_whole'].includes(value) && !value.endsWith('_custom')) {
+              throw new Error(`${value} is not a valid default question`)
+            }
+          }
+        }
       },
       number: {
-        type: DataTypes.INTEGER
+        type: DataTypes.SMALLINT,
+        allowNull: false
       },
       title: {
         type: DataTypes.STRING(100)

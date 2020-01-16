@@ -7,22 +7,22 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.UUID,
       primaryKey: true
     },
-    /*birth_date: {
-      type: DataTypes.DATE
-    },*/
     age: {
-      type: DataTypes.INTEGER
+      type: DataTypes.SMALLINT
     },
     gender: {
-      type: DataTypes.TEXT
+      type: DataTypes.STRING(6)
     },
     entry_hash: {
-      type: DataTypes.TEXT
+      type: DataTypes.TEXT,
+      allowNull: false
     }
   })
 
   AnonUser.associate = models => {
-    AnonUser.belongsTo(models.UserGroup)
+    AnonUser.belongsTo(models.UserGroup, {
+      onDelete: 'CASCADE'
+    })
   }
 
   return AnonUser
