@@ -28,7 +28,7 @@ umzug.up()
     console.log("No pending migrations"))
   .catch(err => console.error(err))
 
-db.sequelize.sync({ force: false })
+db.sequelize.sync({ force: true })
 .then(() => {
   return app.listen(process.env.PORT, () => {
     console.log(`app listening on port ${process.env.PORT}`)
