@@ -9,32 +9,6 @@ const cors = require('cors')
 const generalRateLimiter = require('./controllers/common/generalRateLimiter')
 const schedule = require('./utils/schedule')
 
-const db = require('./models')
-const Umzug = require('umzug')
-const umzug = new Umzug({
-  storage: 'sequelize',
-  storageOptions: {
-    sequelize: db.sequelize
-  },
-  migrations: {
-    path: 'src/migrations'
-  }
-})
-// If you need to change the database, write a migration file in the migrations folder and it will be automatically executed
-umzug.up()
-  .then(migrations => 
-    migrations.length ? 
-    console.log('Executed migrations:', migrations) : 
-    console.log("No pending migrations"))
-  .catch(err => console.error(err))
-
-db.sequelize.sync({ force: true })
-.then(() => {
-  return app.listen(process.env.PORT, () => {
-    console.log(`app listening on port ${process.env.PORT}`)
-  })
-})
-
 const app = express()
 
 app.use(helmet())
@@ -69,4 +43,26 @@ app.use(require('./router/common'))
 app.use(require('./controllers/error/errorLogger'))
 app.use(require('./controllers/error/errorResponder'))
 
-schedule()
+const db = require('./models')
+const Umzug = require('umzug')
+const umzug = new Umzug({
+  storage: 'sequelize',
+  storageOptions: {
+    sequelize: db.sequelize
+  },
+  migrations: {
+    path: 'src/migrations'
+  }
+})
+// If you need to change the database, write a migration file in the migrations folder and it will be automatically executed
+
+db.sequelize.sync()
+  .then(() => umzug.up())
+  .then(migrations => migrations.length ? 
+    console.log('Executed migrations:', migrations) : 
+    console.log("No pending migrations"))
+  .then(() => app.listen(process.env.PORT, () => {
+    console.log(`App listening on port ${process.env.PORT}`)
+    schedule()
+  }))
+  .catch(err => console.error(err))

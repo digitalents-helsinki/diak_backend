@@ -90,10 +90,10 @@ module.exports = wrapAsync(async (req, res, next) => {
       SurveySurveyId: FollowUpSurvey.surveyId
     }, {transaction})
 
-    const todayDistant = (d => new Date(d.setHours(23, 59, 59, 999)))(new Date())
+    const todayImminent = (d => new Date(d.setHours(0, 0, 0, 0)))(new Date())
 
     await asyncRecurser(req.body.to, async (email, promises) => {
-      if (FollowUpSurvey.anon && (!FollowUpSurvey.startDate || new Date(FollowUpSurvey.startDate) === todayDistant)) {
+      if (FollowUpSurvey.anon && (!FollowUpSurvey.startDate || new Date(FollowUpSurvey.startDate) === todayImminent)) {
         const entry_hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
         const id = uuidv4()
         promises.push(db.AnonUser.create({ id, entry_hash }, {transaction}), Group.addAnonUser(id, {transaction}))
@@ -112,7 +112,7 @@ module.exports = wrapAsync(async (req, res, next) => {
           transaction
         })
         promises.push(Group.addUser(User, {transaction}))
-        if (!FollowUpSurvey.startDate || new Date(FollowUpSurvey.startDate) === todayDistant) mails.add(new AuthSurveyEmail(email, FollowUpSurvey.surveyId, FollowUpSurvey.message))
+        if (!FollowUpSurvey.startDate || new Date(FollowUpSurvey.startDate) === todayImminent) mails.add(new AuthSurveyEmail(email, FollowUpSurvey.surveyId, FollowUpSurvey.message))
       }
     })
 

@@ -51,9 +51,9 @@ module.exports = wrapAsync(async (req, res, next) => {
       active: req.body.active
     }, {transaction})
 
-    const todayDistant = (d => new Date(d.setHours(23, 59, 59, 999)))(new Date())
+    const todayImminent = (d => new Date(d.setHours(0, 0, 0, 0)))(new Date())
     
-    if (Survey.anon && (!Survey.startDate || new Date(Survey.startDate) === todayDistant)) {
+    if (Survey.anon && (!Survey.startDate || new Date(Survey.startDate) === todayImminent)) {
       await asyncRecurser(anonEmails, (email, promises) => {
         const entry_hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
         const id = uuidv4()
@@ -90,7 +90,7 @@ module.exports = wrapAsync(async (req, res, next) => {
           transaction
         })
         promises.push(Group.addUser(User, {transaction}))
-        if (!Survey.startDate || new Date(Survey.startDate) === todayDistant) mails.add(new AuthSurveyEmail(email, Survey.surveyId, Survey.message))
+        if (!Survey.startDate || new Date(Survey.startDate) === todayImminent) mails.add(new AuthSurveyEmail(email, Survey.surveyId, Survey.message))
       })
 
       await asyncRecurser(removedRespondents, async (User, promises) => {
