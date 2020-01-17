@@ -59,7 +59,7 @@ const umzug = new Umzug({
 
 // If you need to change the database, write a migration file in the migrations folder and it will be automatically executed
 
-db.sequelize.sync({ force: true })
+db.sequelize.sync()
   .then(() => umzug.up())
   .then(migrations => migrations.length ? 
     console.log('Executed migrations:', migrations) : 
