@@ -22,16 +22,20 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
       transaction
     })
 
+    const startDate = req.body.startDate ? new Date(req.body.startDate).setHours(0, 0, 0, 0) : null
+    const endDate = req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59, 999) : null
+
     const Survey = await db.Survey.create({
       surveyId: req.body.surveyId || uuidv4(),
       ownerId: res.locals.decoded.sub,
       name: req.body.id,
       message: req.body.message,
       anon: req.body.anon,
-      startDate: req.body.startDate ? new Date(req.body.startDate).setHours(0, 0, 0, 0) : null,
-      endDate: req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59, 999) : null,
+      startDate,
+      endDate,
       respondents_size: req.body.to.length,
       final,
+      emailsSent: (!startDate || startDate === (d => d.setHours(0, 0, 0, 0))(new Date()) && final),
       Questions: req.body.questions.map((question, idx) => ({
         questionId: uuidv4(),
         name: question.name || uuidv4() + '_custom',
@@ -53,10 +57,8 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
 
     await Group.setSurvey(Survey, {transaction})
 
-    const todayImminent = (d => new Date(d.setHours(0, 0, 0, 0)))(new Date())
-
     await asyncRecurser(req.body.to, async (email, promises) => {
-      if (Survey.anon && final && (!Survey.startDate || Survey.startDate.getTime() === todayImminent.getTime())) {
+      if (Survey.anon && final && Survey.emailsSent) {
         const entry_hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
         const id = uuidv4()
         promises.push(db.AnonUser.create({ id, entry_hash }, {transaction}), Group.addAnonUser(id, {transaction}))
@@ -75,7 +77,7 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
           transaction
         })
         promises.push(Group.addUser(User, {transaction}))
-        if (final && (!Survey.startDate || Survey.startDate.getTime() === todayImminent.getTime())) {
+        if (final && Survey.emailsSent) {
           mails.add(new AuthSurveyEmail(email, Survey.surveyId, Survey.message))
         }
       }

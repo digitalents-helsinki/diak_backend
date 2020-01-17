@@ -50,10 +50,8 @@ module.exports = wrapAsync(async (req, res, next) => {
       respondents_size: Survey.anon ? anonEmails.length + Survey.respondents_size : emails.length,
       active: req.body.active
     }, {transaction})
-
-    const todayImminent = (d => new Date(d.setHours(0, 0, 0, 0)))(new Date())
     
-    if (Survey.anon && (!Survey.startDate || Survey.startDate.getTime() === todayImminent.getTime())) {
+    if (Survey.anon && !Survey.emailsSent) {
       await asyncRecurser(anonEmails, (email, promises) => {
         const entry_hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
         const id = uuidv4()
@@ -90,7 +88,7 @@ module.exports = wrapAsync(async (req, res, next) => {
           transaction
         })
         promises.push(Group.addUser(User, {transaction}))
-        if (!Survey.startDate || Survey.startDate.getTime() === todayImminent.getTime()) mails.add(new AuthSurveyEmail(email, Survey.surveyId, Survey.message))
+        if (Survey.emailsSent) mails.add(new AuthSurveyEmail(email, Survey.surveyId, Survey.message))
       })
 
       await asyncRecurser(removedRespondents, async (User, promises) => {

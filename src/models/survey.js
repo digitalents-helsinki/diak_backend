@@ -49,6 +49,11 @@ module.exports = (sequelize, DataTypes) => {
       defaultValue: true,
       allowNull: false
     },
+    emailsSent: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: false,
+      allowNull: false
+    },
     surveyGroupId: {
       type: DataTypes.UUID
     }

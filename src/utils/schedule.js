@@ -5,8 +5,6 @@ const { MassEmail, AuthSurveyEmail, AnonSurveyEmail } = require('../utils/sendMa
 const crypto = require('crypto')
 const uuidv4 = require('uuid/v4')
 
-// TODO: save email status somewhere
-
 const dailySurveys = async () => {
   let transaction
   const mails = new MassEmail()
@@ -15,20 +13,25 @@ const dailySurveys = async () => {
     transaction = await db.sequelize.transaction()
 
     const todayImminent = (d => d.setHours(0, 0, 0, 0))(new Date)
+    const weekBefore = (d => d.setDate(d.getDate() - 7))(new Date(todayImminent))
   
     const StartingSurveys = await db.Survey.findAll({
       where: {
-        startDate: todayImminent,
+        startDate: {
+          [db.Sequelize.Op.lte]: todayImminent,
+          [db.Sequelize.Op.gte]: weekBefore
+        },
         createdAt: {
           [db.Sequelize.Op.lt]: todayImminent
         },
+        emailsSent: false,
         final: true
       },
       lock: true,
       transaction
     })
   
-    await asyncRecurse(StartingSurveys, async Survey => {
+    await asyncRecurse(StartingSurveys, async (Survey, promises) => {
       const Group = await db.UserGroup.findOne({
         where: {
           SurveySurveyId: Survey.surveyId
@@ -36,6 +39,8 @@ const dailySurveys = async () => {
         lock: true,
         transaction
       })
+
+      promises.push(Survey.update({ emailsSent: true }, { transaction }))
 
       if (Survey.anon) {
         await asyncRecurse(Group.respondents, (email, promises) => {
