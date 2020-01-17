@@ -3,8 +3,7 @@ module.exports = (array, callback) => new Promise((resolve, reject) => {
     (function asyncRecurse(array, callback, promises = [], index = 0) {
       const curr = array[Number(index)]
       if (curr) {
-        Promise.resolve(callback(curr, promises)).catch(reject)
-        setImmediate(asyncRecurse, array, callback, promises, index + 1)
+        Promise.resolve(callback(curr, promises)).then(() => setImmediate(asyncRecurse, array, callback, promises, index + 1)).catch(reject)
       } else {
         resolve(Promise.all(promises))
       }
