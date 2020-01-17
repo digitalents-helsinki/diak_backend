@@ -13,6 +13,13 @@ const app = express()
 
 app.use(helmet())
 
+app.set('trust proxy', true)
+
+app.use((req, res, next) => {
+  console.log(req.headers)
+  next()
+})
+
 const corsOptions = {
   origin: process.env.CORS_ORIGIN,
   allowedHeaders: ['Content-type', 'Authorization', 'CSRF-Token'],
