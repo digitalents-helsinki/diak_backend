@@ -11,14 +11,9 @@ const schedule = require('./utils/schedule')
 
 const app = express()
 
+app.set('trust proxy', process.env.TRUST_PROXY === 'true')
+
 app.use(helmet())
-
-app.set('trust proxy', true)
-
-app.use((req, res, next) => {
-  console.log(req.headers)
-  next()
-})
 
 const corsOptions = {
   origin: process.env.CORS_ORIGIN,
