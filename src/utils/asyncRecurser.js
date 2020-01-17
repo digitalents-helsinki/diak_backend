@@ -1,9 +1,9 @@
 module.exports = (array, callback) => new Promise((resolve, reject) => {
   try {
-    (async function asyncRecurse(array, callback, promises = [], index = 0) {
+    (function asyncRecurse(array, callback, promises = [], index = 0) {
       const curr = array[Number(index)]
       if (curr) {
-        await callback(curr, promises)
+        Promise.resolve(callback(curr, promises)).catch(reject)
         setImmediate(asyncRecurse, array, callback, promises, index + 1)
       } else {
         resolve(Promise.all(promises))
