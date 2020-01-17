@@ -23,7 +23,10 @@ module.exports = wrapAsync(async (req, res, next) => {
         attributes: ['value'],
         where: {
           final: true,
-          AnonUserId: AnonUser.id
+          AnonUserId: AnonUser.id,
+          updatedAt: {
+            [db.Sequelize.Op.gt]: (d => d.setDate(d.getDate() - 1))(new Date)
+          }
         }
       }
     }
