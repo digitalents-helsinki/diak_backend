@@ -23,7 +23,7 @@ module.exports = wrapAsync(async (req, res) => {
         role: 'admin'
       })
     }
-    const secret = crypto.createHmac('sha512', process.env.HMAC_KEY).update(`${process.env.JWT_KEY}${Admin.createdAt.getTime()}`).digest('hex')
+    const secret = crypto.createHmac('sha512', process.env.HMAC_1024BIT_SECRET_KEY).update(`${process.env.JWT_512BIT_SECRET_KEY}${Admin.createdAt.getTime()}`).digest('hex')
     const token = jwt.sign(
       {
         sub: Admin.userId,

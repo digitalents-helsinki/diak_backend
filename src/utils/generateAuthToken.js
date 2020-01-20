@@ -18,7 +18,7 @@ module.exports = async ({sub, role}) => {
       role,
       ctxHash
     },
-    process.env.JWT_KEY
+    process.env.JWT_512BIT_SECRET_KEY
   )
 
   return {
