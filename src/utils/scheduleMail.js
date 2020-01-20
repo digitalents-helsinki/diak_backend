@@ -1,7 +1,7 @@
 const cron = require('node-cron')
 const db = require('../models')
 const asyncRecurse = require('./asyncRecurser')
-const { MassEmail, AuthSurveyEmail, AnonSurveyEmail } = require('../utils/sendMail')
+const { MassEmail, AuthSurveyEmail, AnonSurveyEmail } = require('./sendMail')
 const crypto = require('crypto')
 const uuidv4 = require('uuid/v4')
 
@@ -70,4 +70,4 @@ const dailySurveys = async () => {
   }
 }
 
-module.exports = () => cron.schedule('0 7 * * *', dailySurveys)
+module.exports = () => cron.schedule('0 5 * * *', dailySurveys)

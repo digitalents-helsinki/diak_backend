@@ -51,7 +51,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     emailsSent: {
       type: DataTypes.BOOLEAN,
-      defaultValue: false,
+      defaultValue: true,
       allowNull: false
     },
     surveyGroupId: {

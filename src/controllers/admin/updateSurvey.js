@@ -51,7 +51,7 @@ module.exports = wrapAsync(async (req, res, next) => {
       active: req.body.active
     }, {transaction})
     
-    if (Survey.anon && !Survey.emailsSent) {
+    if (Survey.anon && Survey.emailsSent) {
       await asyncRecurser(anonEmails, (email, promises) => {
         const entry_hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
         const id = uuidv4()

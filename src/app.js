@@ -7,7 +7,7 @@ const csrf = require('csurf')
 const cookieParser = require('cookie-parser')
 const cors = require('cors')
 const generalRateLimiter = require('./controllers/common/generalRateLimiter')
-const schedule = require('./utils/schedule')
+const scheduleMail = require('./utils/scheduleMail')
 
 const app = express()
 
@@ -66,6 +66,6 @@ db.sequelize.sync()
     console.log("No pending migrations"))
   .then(() => app.listen(process.env.PORT, () => {
     console.log(`App listening on port ${process.env.PORT}`)
-    schedule()
+    scheduleMail()
   }))
   .catch(err => console.error(err))
