@@ -1,7 +1,7 @@
 const cron = require('node-cron')
 const db = require('../models')
 const asyncRecurse = require('./asyncRecurser')
-const { MassEmail, AuthSurveyEmail, AnonSurveyEmail } = require('./sendMail')
+const { MassEmail, generateAuthSurveyEmail, generateAnonSurveyEmail } = require('./sendMail')
 const crypto = require('crypto')
 const uuidv4 = require('uuid/v4')
 
@@ -47,7 +47,7 @@ const dailySurveys = async () => {
           const entry_hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
           const id = uuidv4()
           promises.push(db.AnonUser.create({ id, entry_hash }, {transaction}), Group.addAnonUser(id, {transaction}))
-          mails.add(new AnonSurveyEmail(email, Survey.surveyId, Survey.message, entry_hash))
+          mails.add(generateAnonSurveyEmail(email, Survey.surveyId, Survey.message, entry_hash))
         })
       } else {
         const emails = await Group.getUsers({
@@ -55,7 +55,7 @@ const dailySurveys = async () => {
           lock: true,
           transaction
         }).map(user => user.email)
-        emails.forEach(email => mails.add(new AuthSurveyEmail(email, Survey.surveyId, Survey.message)))
+        emails.forEach(email => mails.add(generateAuthSurveyEmail(email, Survey.surveyId, Survey.message)))
       }
     })
 
@@ -63,10 +63,11 @@ const dailySurveys = async () => {
 
   } catch(err) {
     await transaction.rollback()
-    console.error(err)
+    console.error(`Sending daily mails failed: ${err}`)
   }
   if (transaction.finished === 'commit') {
     mails.send()
+    console.log(`Sent ${mails.getAmount()} daily mails.`)
   }
 }
 

@@ -2,7 +2,7 @@ const wrapAsync = require('../../utils/wrapAsync')
 const db = require('../../models')
 const uuidv4 = require('uuid/v4')
 const crypto = require('crypto')
-const { MassEmail, AnonSurveyEmail, AuthSurveyEmail } = require('../../utils/sendMail')
+const { MassEmail, generateAnonSurveyEmail, generateAuthSurveyEmail } = require('../../utils/sendMail')
 const asyncRecurser = require('../../utils/asyncRecurser')
 
 module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
@@ -62,7 +62,7 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
         const entry_hash = crypto.createHash('md5').update("" + (Math.random() * 99999999) + Date.now()).digest("hex")
         const id = uuidv4()
         promises.push(db.AnonUser.create({ id, entry_hash }, {transaction}), Group.addAnonUser(id, {transaction}))
-        mails.add(new AnonSurveyEmail(email, Survey.surveyId, Survey.message, entry_hash))
+        mails.add(generateAnonSurveyEmail(email, Survey.surveyId, Survey.message, entry_hash))
       } else if (!Survey.anon) {
         const [User] = await db.User.findOrCreate({
           where: {
@@ -78,7 +78,7 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
         })
         promises.push(Group.addUser(User, {transaction}))
         if (final && Survey.emailsSent) {
-          mails.add(new AuthSurveyEmail(email, Survey.surveyId, Survey.message))
+          mails.add(generateAuthSurveyEmail(email, Survey.surveyId, Survey.message))
         }
       }
     })
