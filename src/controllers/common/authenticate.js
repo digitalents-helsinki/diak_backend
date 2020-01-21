@@ -7,7 +7,7 @@ module.exports = (req, res, next) => {
   const ctx = req.cookies.Ctx
   if (authHeader && authHeader.substring && ctx) {
     const token = authHeader.substring(7)
-    const decoded = jwt.verify(token, process.env.JWT_KEY, { audience: 'auth' })
+    const decoded = jwt.verify(token, process.env.JWT_512BIT_SECRET_KEY, { audience: 'auth' })
 
     const ctxHash = crypto.createHash('sha512').update(ctx).digest('hex')
     const validCtx = crypto.timingSafeEqual(Buffer.from(decoded.ctxHash), Buffer.from(ctxHash))

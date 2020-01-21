@@ -1,7 +1,7 @@
 const db = require('../../models')
 const wrapAsync = require('../../utils/wrapAsync')
 const { StatusError } = require('../../utils/customErrors')
-const sendMail = require('../../utils/mail')
+const { sendCustomEmail } = require('../../utils/sendMail')
 const escape = require('escape-html')
 
 module.exports = wrapAsync(async (req, res, next) => {
@@ -24,7 +24,10 @@ module.exports = wrapAsync(async (req, res, next) => {
       model: db.Answer,
       where: {
         final: true,
-        AnonUserId: AnonUser.id
+        AnonUserId: AnonUser.id,
+        updatedAt: {
+          [db.Sequelize.Op.gt]: (d => d.setDate(d.getDate() - 1))(new Date)
+        }
       }
     },
     rejectOnEmpty: true
@@ -60,8 +63,8 @@ module.exports = wrapAsync(async (req, res, next) => {
       `
   }, '')
 
-  sendMail(req.body.email, 'Vastauksesi kyselyyn', 
-    `Tässä ovat vastauksesi täyttämääsi kyselyyn:
+  sendCustomEmail(req.body.email, 'Vastauksesi kyselyyn',
+    `Tässä ovat vastauksesi täyttämääsi 3X10D -kyselyyn:
     <br><br>
     <table style="border: 2px solid black; border-collapse: separate; border-spacing: 0; width: 100%;">
       <tr>
@@ -76,8 +79,8 @@ module.exports = wrapAsync(async (req, res, next) => {
         </td>
       </tr>
       ${tableContents}
-    </table>
-    `)
+    </table>`
+  )
   
   return res.send("Email sent")
 })

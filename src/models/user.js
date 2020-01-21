@@ -10,7 +10,12 @@ module.exports = (sequelize, DataTypes) => {
     role: {
       type: DataTypes.TEXT,
       allowNull: false,
-      defaultValue: 'user'
+      defaultValue: 'user',
+      validate: {
+        allowedRoles(value) {
+          if (!['user', 'admin'].includes(value)) throw new Error(`Role "${value}" is not allowed`)
+        }
+      }
     },
     email: {
       type: DataTypes.TEXT,
@@ -41,7 +46,7 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.TEXT,
       validate: {
         allowedProviders(value) {
-          if (!['GOOGLE', 'FACEBOOK'].includes(value)) throw new Error(`Provider ${value} is not allowed`)
+          if (!['GOOGLE', 'FACEBOOK'].includes(value)) throw new Error(`Provider "${value}" is not allowed`)
         }
       }
     }

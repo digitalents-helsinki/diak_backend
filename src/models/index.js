@@ -22,7 +22,8 @@ if (process.env.NODE_ENV === 'development') {
       dialect: 'postgres',
       dialectOptions: {
         ssl: true
-      }
+      },
+      logging: false
     }
   )
 } else {

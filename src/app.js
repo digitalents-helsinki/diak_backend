@@ -7,10 +7,11 @@ const csrf = require('csurf')
 const cookieParser = require('cookie-parser')
 const cors = require('cors')
 const generalRateLimiter = require('./controllers/common/generalRateLimiter')
-
-const db = require('./models')
+const scheduleMail = require('./utils/scheduleMail')
 
 const app = express()
+
+app.set('trust proxy', process.env.TRUST_PROXY === 'true')
 
 app.use(helmet())
 
@@ -35,13 +36,6 @@ app.use(csrfProtection)
 
 app.use(bodyParser.json())
 
-db.sequelize.sync({ force: false })
-.then(() => {
-  return app.listen(process.env.PORT, () => {
-    console.log(`app listening on port ${process.env.PORT}`)
-  })
-})
-
 app.use('/supervisor', require('./router/supervisor'))
 app.use('/admin', require('./router/admin'))
 app.use('/auth', require('./router/auth'))
@@ -50,3 +44,28 @@ app.use(require('./router/common'))
 
 app.use(require('./controllers/error/errorLogger'))
 app.use(require('./controllers/error/errorResponder'))
+
+const db = require('./models')
+const Umzug = require('umzug')
+const umzug = new Umzug({
+  storage: 'sequelize',
+  storageOptions: {
+    sequelize: db.sequelize
+  },
+  migrations: {
+    path: 'src/migrations'
+  }
+})
+
+// If you need to change the database, write a migration file in the migrations folder and it will be automatically executed
+
+db.sequelize.sync()
+  .then(() => umzug.up())
+  .then(migrations => migrations.length ? 
+    console.log('Executed migrations:', migrations) : 
+    console.log("No pending migrations"))
+  .then(() => app.listen(process.env.PORT, () => {
+    console.log(`App listening on port ${process.env.PORT}`)
+    scheduleMail()
+  }))
+  .catch(err => console.error(err))

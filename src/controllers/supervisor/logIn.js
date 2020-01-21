@@ -19,12 +19,12 @@ module.exports = wrapAsync(async (req, res, next) => {
   const resSlowByIp = await limiterSlowBruteByIp.get(req.ip)
   if (resSlowByIp && resSlowByIp.consumedPoints >= maxWrongAttemptsByIpPerDay) return next(new RateLimiterError(resSlowByIp))
 
-  const validPassword = await argon2.verify(process.env.SUPERVISOR_PASSWORD, req.body.password)
+  const validPassword = await argon2.verify(process.env.SUPERVISOR_PASSWORD_AS_ENCODED_ARGON2_HASH, req.body.password)
   if (validPassword) {
     const ctx = await getRandomBytes(50)
     const ctxHash = crypto.createHash('sha512').update(ctx).digest('hex')
 
-    const secret = crypto.createHmac('sha512', process.env.HMAC_KEY).update(`${process.env.JWT_KEY}${process.env.SUPERVISOR_PASSWORD}`).digest('hex')
+    const secret = crypto.createHmac('sha512', process.env.HMAC_1024BIT_SECRET_KEY).update(`${process.env.JWT_512BIT_SECRET_KEY}${process.env.SUPERVISOR_PASSWORD_AS_ENCODED_ARGON2_HASH}`).digest('hex')
 
     const token = jwt.sign(
       {

@@ -2,8 +2,9 @@ const wrapAsync = require('../../utils/wrapAsync')
 const uuidv4 = require('uuid/v4')
 const db = require('../../models')
 const { StatusError } = require('../../utils/customErrors')
+const asyncRecurser = require('../../utils/asyncRecurser')
 
-module.exports = ({ final }) => wrapAsync(async (req, res) => {
+module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
 
   let transaction;
 
@@ -54,48 +55,58 @@ module.exports = ({ final }) => wrapAsync(async (req, res) => {
     
     const currentTime = Date.now()
 
-    if ((survey.startDate !== null) && (currentTime < survey.startDate.getTime())) throw new StatusError("Survey hasn't started", 403)
+    if ((survey.startDate !== null) && (currentTime < survey.startDate.getTime())) throw new StatusError(`Survey hasn't started, it will start on ${survey.startDate}`, 403)
     if ((survey.endDate !== null) && (survey.endDate.getTime() < currentTime)) throw new StatusError("Survey has ended", 403)
     if (!survey.active) throw new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403)
     if (survey.archived) throw new StatusError("Survey has been archived and answering is no longer possible", 403)
 
-    for (const answer of req.body.answers) {
+    const Questions = await db.Question.findAll({
+      where: {
+        SurveySurveyId: survey.surveyId
+      },
+      attributes: ['questionId'],
+      lock: true,
+      transaction
+    })
+
+    await asyncRecurser(Questions, async (question, promises) => {
+      const currentAnswer = req.body.answers.find(answer => answer.id === question.questionId)
       const [savedAnswer, created] = await db.Answer.findOrCreate({
         where: {
           SurveySurveyId: survey.surveyId,
           AnonUserId: anonuser.id,
-          QuestionQuestionId: answer.id,
+          QuestionQuestionId: currentAnswer.id,
           final: false
         },
         defaults: {
           answerId: uuidv4(),
-          value: answer.val,
-          description: answer.desc,
+          value: currentAnswer.val,
+          description: currentAnswer.desc,
           final
         },
         lock: true,
         transaction
       })
       if (created) {
-        await Promise.all([
+        promises.push([
           savedAnswer.setSurvey(req.body.surveyId, {transaction}),
-          savedAnswer.setQuestion(answer.id, {transaction}),
+          savedAnswer.setQuestion(question.questionId, {transaction}),
           savedAnswer.setAnonUser(anonuser, {transaction})
         ])
       } else {
-        await savedAnswer.update({
-          value: answer.val,
-          description: answer.desc,
+        promises.push(savedAnswer.update({
+          value: currentAnswer.val,
+          description: currentAnswer.desc,
           final
-        }, {transaction})
+        }, {transaction}))
       }
-    }
+    })
 
     await transaction.commit()
 
   } catch (err) {
     await transaction.rollback()
-    throw err
+    return next(err)
   }
   if (transaction.finished === 'commit') res.json({status: "ok"})
 

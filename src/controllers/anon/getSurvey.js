@@ -28,7 +28,7 @@ module.exports = wrapAsync(async (req, res, next) => {
 
   const currentTime = Date.now()
 
-  if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) return next(new StatusError("Survey hasn't started", 403))
+  if ((Survey.startDate !== null) && (currentTime < Survey.startDate.getTime())) return next(new StatusError(`Survey hasn't started, it will start on ${Survey.startDate}`, 403))
   if ((Survey.endDate !== null) && (Survey.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
   if (!Survey.active) return next(new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403))
   if (Survey.archived) return next(new StatusError("Survey has been archived and answering is no longer possible", 403))

@@ -23,7 +23,10 @@ module.exports = wrapAsync(async (req, res, next) => {
         attributes: ['value'],
         where: {
           final: true,
-          AnonUserId: AnonUser.id
+          AnonUserId: AnonUser.id,
+          updatedAt: {
+            [db.Sequelize.Op.gt]: (d => d.setDate(d.getDate() - 1))(new Date)
+          }
         }
       }
     }
@@ -33,7 +36,7 @@ module.exports = wrapAsync(async (req, res, next) => {
 
   const currentTime = Date.now()
 
-  if ((Result.startDate !== null) && (currentTime < Result.startDate.getTime())) return next(new StatusError("Survey hasn't started", 403))
+  if ((Result.startDate !== null) && (currentTime < Result.startDate.getTime())) return next(new StatusError(`Survey hasn't started, it will start on ${Result.startDate}`, 403))
   if ((Result.endDate !== null) && (Result.endDate.getTime() < currentTime)) return next(new StatusError("Survey has ended", 403))
   if (!Result.active) return next(new StatusError("Survey has been suspended by its administrator, it may become accessible at some later point in time", 403))
   if (Result.archived) return next(new StatusError("Survey has been archived and answering is no longer possible", 403))

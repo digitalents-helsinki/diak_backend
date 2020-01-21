@@ -1,5 +1,5 @@
 const uuidv4 = require('uuid/v4')
-const sendMail = require('../../utils/mail')
+const { sendCustomEmail } = require('../../utils/sendMail')
 const wrapAsync = require('../../utils/wrapAsync')
 const crypto = require('crypto')
 const jwt = require('jsonwebtoken')
@@ -8,7 +8,8 @@ const db = require('../../models')
 module.exports = wrapAsync(async (req, res) => {
   const [Admin, created] = await db.User.findOrCreate({
     where: {
-      $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', req.body.email))
+      $col: db.sequelize.where(db.sequelize.fn('lower', db.sequelize.col('email')), db.sequelize.fn('lower', req.body.email)),
+      role: 'user'
     },
     defaults: {
       userId: uuidv4(),
@@ -22,7 +23,7 @@ module.exports = wrapAsync(async (req, res) => {
         role: 'admin'
       })
     }
-    const secret = crypto.createHmac('sha512', process.env.HMAC_KEY).update(`${process.env.JWT_KEY}${Admin.createdAt.getTime()}`).digest('hex')
+    const secret = crypto.createHmac('sha512', process.env.HMAC_1024BIT_SECRET_KEY).update(`${process.env.JWT_512BIT_SECRET_KEY}${Admin.createdAt.getTime()}`).digest('hex')
     const token = jwt.sign(
       {
         sub: Admin.userId,
@@ -31,18 +32,17 @@ module.exports = wrapAsync(async (req, res) => {
       },
       secret
     )
-    sendMail(req.body.email, 'Tervetuloa 3X10D -hallinnoitsijaksi', 
+    sendCustomEmail(Admin.email, 'Tervetuloa 3X10D -hallinnoitsijaksi',
       `Sinusta on tehty 3X10D -hallinnoitsija. Pääset asettamaan salasanasi allaolevasta linkistä. Linkki toimii viikon ajan.
       <br><br>
-      ${process.env.FRONTEND_URL}/password/create/${token}
-      `
+      ${process.env.FRONTEND_URL}/password/create/${token}`
     )
   } else {
     await Admin.update({
       role: 'admin'
     })
-    sendMail(req.body.email, 'Tervetuloa 3X10D -hallinnoitsijaksi', 
-      `Sinusta on tehty 3X10D -hallinnoitsija. Löydät hallinnoitsijapaneelin kirjautumalla sisään 3X10D -sovellukseen.`
+    sendCustomEmail(Admin.email, 'Tervetuloa 3X10D -hallinnoitsijaksi',
+      'Sinusta on tehty 3X10D -hallinnoitsija. Löydät hallinnoitsijapaneelin kirjautumalla sisään 3X10D -sovellukseen.'
     )
   }
 

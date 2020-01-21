@@ -1,6 +1,6 @@
 const db = require('../../models')
 const wrapAsync = require('../../utils/wrapAsync')
-const sendMail = require('../../utils/mail')
+const { sendCustomEmail } = require('../../utils/sendMail')
 const escape = require('escape-html')
 
 module.exports = wrapAsync(async (req, res, next) => {
@@ -57,8 +57,8 @@ module.exports = wrapAsync(async (req, res, next) => {
       `
   }, '')
 
-  sendMail(User.email, 'Vastauksesi kyselyyn', 
-    `Tässä ovat vastauksesi täyttämääsi kyselyyn:
+  sendCustomEmail(User.email, 'Vastauksesi kyselyyn',
+    `Tässä ovat vastauksesi täyttämääsi 3X10D -kyselyyn:
     <br><br>
     <table style="border: 2px solid black; border-collapse: separate; border-spacing: 0; width: 100%;">
       <tr>
@@ -73,8 +73,8 @@ module.exports = wrapAsync(async (req, res, next) => {
         </td>
       </tr>
       ${tableContents}
-    </table>
-    `)
+    </table>`
+  )
   
   return res.send("Email sent")
 })
