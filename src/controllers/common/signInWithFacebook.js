@@ -7,17 +7,24 @@ const hashPassword = require('../../utils/hashPassword')
 const { request } = require('gaxios')
 
 module.exports = wrapAsync(async (req, res, next) => {
-
-  const { data: { error: tokenValidationError, user_id } } = await request({
-    url: 'https://graph.facebook.com/v5.0/oauth/debug_token',
+  const { data: { data: { error: tokenValidationError, user_id } } } = await request({
+    url: 'https://graph.facebook.com/v5.0/debug_token',
     params: {
       input_token: req.body.accessToken,
-      access_token: process.env.FACEBOOK_APP_ID + process.env.FACEBOOK_APP_SECRET
+      access_token: `${process.env.FACEBOOK_APP_ID}|${process.env.FACEBOOK_APP_SECRET}`
+    }
+  })
+
+  const { data: { email } } = await request({
+    url:  `https://graph.facebook.com/v5.0/${user_id}`,
+    params: {
+      fields: 'email',
+      access_token: req.body.accessToken
     }
   })
 
   if (tokenValidationError) {
-    return next(new Error(`${tokenValidationError.type}: ${tokenValidationError.message}`))
+    return next(new Error(`${tokenValidationError.type}: ${tokenValidationError.message}`)) // should fail without this but check anyway
   }
 
   let User = await db.User.findOne({
