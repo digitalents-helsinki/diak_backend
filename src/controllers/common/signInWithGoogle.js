@@ -1,13 +1,18 @@
 const wrapAsync = require('../../utils/wrapAsync')
-const verifyGoogleIdToken = require('../../utils/verifyGoogleIdToken')
 const generateAuthToken = require('../../utils/generateAuthToken')
 const uuidv4 = require('uuid/v4')
 const db = require('../../models')
 const getRandomBytes = require('../../utils/getRandomBytes')
 const hashPassword = require('../../utils/hashPassword')
+const { OAuth2Client } = require('google-auth-library')
 
 module.exports = wrapAsync(async (req, res, next) => {
-  const { sub, email } = await verifyGoogleIdToken(req.body.id_token)
+  const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID, process.env.GOOGLE_CLIENT_SECRET, 'postmessage')
+  const ticket = await client.verifyIdToken({
+    idToken: req.body.id_token,
+    audience: process.env.GOOGLE_CLIENT_ID
+  })
+  const { sub, email } = ticket.getPayload()
 
   let User = await db.User.findOne({
     where: {

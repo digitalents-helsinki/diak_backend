@@ -7,7 +7,7 @@ const hashPassword = require('../../utils/hashPassword')
 const { request } = require('gaxios')
 
 module.exports = wrapAsync(async (req, res, next) => {
-  const { data: { data: { error: tokenValidationError, user_id } } } = await request({
+  const { data: { data: { user_id, is_valid, app_id, scopes, expires_at } } } = await request({
     url: 'https://graph.facebook.com/v5.0/debug_token',
     params: {
       input_token: req.body.accessToken,
@@ -15,7 +15,11 @@ module.exports = wrapAsync(async (req, res, next) => {
     }
   })
 
-  const { data: { email } } = await request({
+  if (!is_valid || app_id !== process.env.FACEBOOK_APP_ID || !scopes.includes('email') || expires_at < (Date.now() / 1000)) {
+    return next(new Error('Facebook Access Token is invalid')) // I'm not sure if this check is needed but doing it anyway
+  }
+
+  const { data: { email, id } } = await request({
     url:  `https://graph.facebook.com/v5.0/${user_id}`,
     params: {
       fields: 'email',
@@ -23,8 +27,8 @@ module.exports = wrapAsync(async (req, res, next) => {
     }
   })
 
-  if (tokenValidationError) {
-    return next(new Error(`${tokenValidationError.type}: ${tokenValidationError.message}`)) // should fail without this but check anyway
+  if (!email || id !== user_id) {
+    return next(new Error("Facebook didn't return proper data")) // more paranoid checks
   }
 
   let User = await db.User.findOne({
