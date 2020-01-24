@@ -1,5 +1,5 @@
 module.exports = (err, req, res, next) => {
-  const message = err.message || err.name
+  const message = err.message || err.name || "Unknown Error"
   const location = req.url
   const subject = res.locals.decoded ? res.locals.decoded.sub || req.ip : req.ip
   if (process.env.NODE_ENV === 'production') {
