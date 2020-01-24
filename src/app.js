@@ -1,5 +1,7 @@
 require('dotenv').config()
-if (process.env.NODE_ENV === 'development') require('blocked-at')((time, stack) => console.log(`Blocked for ${time}ms, operation started here:`, stack), { threshold: 40 })
+if (process.env.NODE_ENV === 'development') {
+  require('blocked-at')((time, stack) => console.log(`Blocked for ${time}ms, operation started here:`, stack), { threshold: 40 })
+}
 const express = require('express')
 const helmet = require('helmet')
 const bodyParser = require('body-parser')
@@ -53,6 +55,10 @@ const umzug = new Umzug({
     sequelize: db.sequelize
   },
   migrations: {
+    params: [
+      db.sequelize.getQueryInterface(),
+      require('sequelize')
+    ],
     path: 'src/migrations'
   }
 })

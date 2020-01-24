@@ -4,20 +4,37 @@ const uuidv4 = require('uuid/v4')
 const db = require('../../models')
 const getRandomBytes = require('../../utils/getRandomBytes')
 const hashPassword = require('../../utils/hashPassword')
-const { OAuth2Client } = require('google-auth-library')
+const { request } = require('gaxios')
 
 module.exports = wrapAsync(async (req, res, next) => {
-  const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
-  const ticket = await client.verifyIdToken({
-    idToken: req.body.id_token,
-    audience: process.env.GOOGLE_CLIENT_ID
+  const { data: { data: { user_id, is_valid, app_id, scopes, expires_at } } } = await request({
+    url: 'https://graph.facebook.com/v5.0/debug_token',
+    params: {
+      input_token: req.body.accessToken,
+      access_token: `${process.env.FACEBOOK_APP_ID}|${process.env.FACEBOOK_APP_SECRET}`
+    }
   })
-  const { sub, email } = ticket.getPayload()
+
+  if (!is_valid || app_id !== process.env.FACEBOOK_APP_ID || !scopes.includes('email') || expires_at < (Date.now() / 1000)) {
+    return next(new Error('Facebook Access Token is invalid')) // I'm not sure if this check is needed but doing it anyway
+  }
+
+  const { data: { email, id } } = await request({
+    url:  `https://graph.facebook.com/v5.0/${user_id}`,
+    params: {
+      fields: 'email',
+      access_token: req.body.accessToken
+    }
+  })
+
+  if (!email || id !== user_id) {
+    return next(new Error("Facebook didn't return proper data")) // more paranoid checks
+  }
 
   let User = await db.User.findOne({
     where: {
-      external_id: sub,
-      external_type: 'GOOGLE'
+      external_id: user_id,
+      external_type: 'FACEBOOK'
     }
   })
 
@@ -36,16 +53,16 @@ module.exports = wrapAsync(async (req, res, next) => {
     if (User) {
       await User.update({
         password: hashedPassword,
-        external_id: sub,
-        external_type: 'GOOGLE'
+        external_id: user_id,
+        external_type: 'FACEBOOK'
       })
     } else {
       User = await db.User.create({
         userId: uuidv4(),
         password: hashedPassword,
         email,
-        external_id: sub,
-        external_type: 'GOOGLE'
+        external_id: user_id,
+        external_type: 'FACEBOOK'
       })
     }
   }
