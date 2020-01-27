@@ -25,6 +25,8 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
     const startDate = req.body.startDate ? new Date(req.body.startDate).setHours(0, 0, 0, 0) : null
     const endDate = req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59, 999) : null
 
+    console.log(startDate, endDate)
+
     const Survey = await db.Survey.create({
       surveyId: req.body.surveyId || uuidv4(),
       ownerId: res.locals.decoded.sub,
