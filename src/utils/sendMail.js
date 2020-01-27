@@ -1,7 +1,7 @@
 const sgMail = require('@sendgrid/mail')
 sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
-const sendMail = (mail) => sgMail.send(mail).catch(err => console.error(err.toString()))
+const sendMail = (mail) => sgMail.send(mail)
 
 const email = {
   from: process.env.EMAIL_FROM
@@ -55,6 +55,6 @@ exports.MassEmail = class MassEmail {
   }
 
   send() {
-    if (this.data.length) sendMail(this.data)
+    if (this.data.length) return sendMail(this.data)
   }
 }

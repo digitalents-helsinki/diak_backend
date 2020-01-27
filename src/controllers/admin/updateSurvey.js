@@ -108,6 +108,8 @@ module.exports = wrapAsync(async (req, res, next) => {
 
     }
     
+    await mails.send()
+    
     await transaction.commit()
     
   } catch(err) {
@@ -115,7 +117,6 @@ module.exports = wrapAsync(async (req, res, next) => {
     return next(err)
   }
   if (transaction.finished === 'commit') {
-    mails.send()
     const Survey = await db.Survey.findByPk(req.params.surveyId, {
       include: {
         model: db.UserGroup,

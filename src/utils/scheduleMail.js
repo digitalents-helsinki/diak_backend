@@ -58,6 +58,8 @@ const dailySurveys = async () => {
         emails.forEach(email => mails.add(generateAuthSurveyEmail(email, Survey.surveyId, Survey.message)))
       }
     })
+    
+    await mails.send()
 
     await transaction.commit()
 
@@ -66,7 +68,6 @@ const dailySurveys = async () => {
     console.error(`Sending daily mails failed: ${err}`)
   }
   if (transaction.finished === 'commit') {
-    mails.send()
     console.log(`Sent ${mails.getAmount()} daily mails.`)
   }
 }

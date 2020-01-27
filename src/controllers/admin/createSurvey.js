@@ -83,6 +83,8 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
       }
     })
 
+    if (final) await mails.send()
+    
     await transaction.commit()
 
   } catch(err) {
@@ -90,7 +92,6 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
     return next(err)
   }
   if (transaction.finished === 'commit') {
-    if (final) mails.send()
     return res.send("Survey succesfully created")
   }
 })
