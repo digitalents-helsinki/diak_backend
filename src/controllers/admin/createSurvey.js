@@ -22,10 +22,10 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
       transaction
     })
 
-    const startDate = req.body.startDate ? new Date(req.body.startDate).setHours(0, 0, 0, 0) : null
-    const endDate = req.body.endDate ? new Date(req.body.endDate).setHours(23, 59, 59, 999) : null
+    const startDate = req.body.startDate ? new Date(req.body.startDate).setUTCHours(0, 0, 0, 0) : null
+    const endDate = req.body.endDate ? new Date(req.body.endDate).setUTCHours(23, 59, 59, 999) : null
 
-    console.log(startDate, endDate)
+    console.log(req.body.startDate, req.body.endDate, startDate, endDate)
 
     const Survey = await db.Survey.create({
       surveyId: req.body.surveyId || uuidv4(),
@@ -37,7 +37,7 @@ module.exports = ({ final }) => wrapAsync(async (req, res, next) => {
       endDate,
       respondents_size: req.body.to.length,
       final,
-      emailsSent: (!startDate || startDate === (d => d.setHours(0, 0, 0, 0))(new Date()) && final),
+      emailsSent: (!startDate || startDate === (d => d.setUTCHours(0, 0, 0, 0))(new Date()) && final),
       Questions: req.body.questions.map((question, idx) => ({
         questionId: uuidv4(),
         name: question.name || uuidv4() + '_custom',
