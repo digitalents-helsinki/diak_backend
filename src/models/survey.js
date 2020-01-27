@@ -59,6 +59,15 @@ module.exports = (sequelize, DataTypes) => {
     }
   },
   {
+    validate: {
+      startDateBeforeEndDate() {
+        if ((this.startDate !== null) && (this.endDate !== null)) {
+          if (this.endDate.getTime() < this.startDate.getTime()) {
+            throw new Error("Start date cannot be before end date!")
+          }
+        }
+      }
+    },
     defaultScope: {
       where: {
         final: true

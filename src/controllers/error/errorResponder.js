@@ -27,7 +27,8 @@ module.exports = (err, req, res, next) => {
     case UniqueConstraintError:
       return res.status(409).json(Object.values(err.fields))
     case ValidationError:
-      return res.status(422).json(err.errors.map(error => error.value))
+      console.log(err)
+      return res.status(422).json(err.errors.map(error => error.value || error.message))
     default:
       switch (true) {
         case err.code === 'EBADCSRFTOKEN': 
