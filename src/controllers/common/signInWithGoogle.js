@@ -23,7 +23,7 @@ module.exports = wrapAsync(async (req, res, next) => {
 
   if (!User) {
     const password = await getRandomBytes(64)
-    const hashedPassword = await hashPassword(password)
+    const hashedPassword = await hashPassword(Buffer.from(password, 'hex'))
 
     User = await db.User.findOne({
       where: {

@@ -22,7 +22,7 @@ module.exports = wrapAsync(async (req, res, next) => {
     rejectOnEmpty: true
   })
   
-  const secret = crypto.createHmac('sha512', process.env.HMAC_1024BIT_SECRET_KEY).update(`${userRecord.password}${userRecord.createdAt.getTime()}`).digest('hex')
+  const secret = crypto.createHmac('sha512', process.env.HMAC_1024BIT_SECRET_KEY).update(`${userRecord.password}${userRecord.createdAt.getTime()}`).digest()
 
   jwt.verify(token, secret, { audience: 'recover' })
 

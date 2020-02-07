@@ -16,7 +16,7 @@ module.exports = wrapAsync(async (req, res, next) => {
 
   if (User.password) {
     const password = await getRandomBytes(64)
-    const hashedPassword = await hashPassword(password)
+    const hashedPassword = await hashPassword(Buffer.from(password, 'hex'))
 
     await User.update({
       email: uuidv4(),
