@@ -62,7 +62,8 @@ module.exports = wrapAsync(async (req, res, next) => {
     
     return res.cookie('Ctx', ctx, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production'
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'none'
     }).json({
       authInfo: {
         userId: userRecord.userId, 

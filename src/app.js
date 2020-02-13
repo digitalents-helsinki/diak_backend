@@ -31,7 +31,8 @@ app.use(cookieParser())
 const csrfProtection = csrf({
   cookie: {
     httpOnly: true,
-    secure: process.env.NODE_ENV === 'production'
+    secure: process.env.NODE_ENV === 'production',
+    sameSite: 'none'
   }
 })
 app.use(csrfProtection)
