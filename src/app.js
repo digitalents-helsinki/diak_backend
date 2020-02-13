@@ -13,7 +13,7 @@ const scheduleMail = require('./utils/scheduleMail')
 
 const app = express()
 
-app.set('trust proxy', process.env.TRUST_PROXY === 'true')
+app.set('trust proxy', process.env.TRUST_PROXY === 'enabled')
 
 app.use(helmet())
 
