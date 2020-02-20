@@ -24,7 +24,7 @@ const corsOptions = {
 }
 app.use(cors(corsOptions))
 
-app.use(generalRateLimiter)
+if (process.env.RATE_LIMITING === 'enabled') app.use(generalRateLimiter)
 
 app.use(cookieParser())
 
